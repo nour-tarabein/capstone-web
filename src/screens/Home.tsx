@@ -1,15 +1,31 @@
 import { mdiChevronRight, mdiMapOutline } from '@mdi/js';
 import heroBanner from '../assets/hero-banner.png';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { openMap } from '../App';
-import { homeActions } from '../data/mock';
+import { goToTab, openMap } from '../App';
+import { homeActions, sessionGuide } from '../data/mock';
+import { attendees } from '../offsite/fixtures/attendees';
+import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
-export function HomeScreen({ onShowSchedule }: { onShowSchedule: () => void }) {
+/** Where each quick tile goes. Tiles without a screen of their own open the
+ *  matching sheet, so every tap on the grid lands somewhere real. */
+const TILE_TARGETS: Record<string, () => void> = {
+  speakers: () => openOverlay({ kind: 'speakers' }),
+  attendees: () => openOverlay({ kind: 'attendees' }),
+  onDemand: () => openOverlay({ kind: 'ondemand' }),
+  exhibitors: () => goToTab('exhibitors'),
+  sponsors: () => openOverlay({ kind: 'sponsors' }),
+  games: () => openOverlay({ kind: 'games' }),
+};
+
+export function HomeScreen() {
+  const sessionCount = sessionGuide.filter((s) => !s.official).length;
+
   return (
     <div className="screen home-screen">
       <ScreenHeader
+        showSearch
         center={
           <div className="brand-block">
             <span className="brand-logo">demo</span>
@@ -21,7 +37,25 @@ export function HomeScreen({ onShowSchedule }: { onShowSchedule: () => void }) {
       <div className="screen-scroll home-content">
         <div className="hero-wrap">
           <img src={heroBanner} alt="Conference main stage" className="hero-image" />
+          <span className="hero-shade" />
           <span className="hero-rail" />
+          <span className="live-pill">
+            <span className="live-dot" />
+            Day 1 · Live
+          </span>
+          <span className="hero-date">Sep 15–18 · Austin, TX</span>
+        </div>
+
+        <div className="stat-row">
+          <span className="stat-chip">
+            <strong>{attendees.length * 60}+</strong> attendees
+          </span>
+          <span className="stat-chip">
+            <strong>{sessionCount}</strong> sessions
+          </span>
+          <span className="stat-chip">
+            <strong>3</strong> nights out
+          </span>
         </div>
 
         <h1 className="home-welcome">Welcome to Lonestar Tech Summit 2026</h1>
@@ -30,7 +64,7 @@ export function HomeScreen({ onShowSchedule }: { onShowSchedule: () => void }) {
           Budget, breakout sessions, and the Summit Opening Reception on the
           Terrace at 6:00 PM!
         </p>
-        <button className="home-link" onClick={onShowSchedule}>
+        <button className="home-link" onClick={() => goToTab('schedule')}>
           View my schedule
         </button>
 
@@ -48,13 +82,29 @@ export function HomeScreen({ onShowSchedule }: { onShowSchedule: () => void }) {
         </button>
 
         <div className="home-grid">
-          {homeActions.map((action) => (
-            <button key={action.id} className="home-tile">
+          {homeActions.map((action, i) => (
+            <button
+              key={action.id}
+              className="home-tile"
+              style={{ animationDelay: `${i * 45}ms` }}
+              onClick={TILE_TARGETS[action.id]}
+            >
               <Icon path={action.icon} size={34} color={colors.textDark} />
               <span className="home-tile-label">{action.label}</span>
             </button>
           ))}
         </div>
+
+        <button
+          className="happening-card"
+          onClick={() => openOverlay({ kind: 'session', sessionId: 'reception' } satisfies Overlay)}
+        >
+          <span className="happening-kicker">
+            <span className="live-dot" /> Up next
+          </span>
+          <span className="happening-title">Summit Opening Reception</span>
+          <span className="happening-meta">6:00 PM · The Terrace · on everyone&apos;s schedule</span>
+        </button>
       </div>
     </div>
   );

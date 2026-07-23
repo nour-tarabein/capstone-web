@@ -35,15 +35,20 @@ subpath without edits.
 
 - **Home → Tonight Nearby** opens the off-site networking map: official
   conference events plus Eventbrite/Luma/Partiful/Shotgun events around
-  downtown Austin, one night at a time.
+  downtown Austin, one night at a time, with the conference chrome floating
+  over a full-bleed dark map.
 - Tap a pin or a card, then **I'm going** — the attending list unlocks only
   after you RSVP (the reciprocity gate), grouped by what you share with each
-  person.
+  person. **Message** anyone in the list to open a demo DM thread.
 - **Viewing as** switches the demo persona; the attending list regroups
   around the new viewer.
 - **Host** submits a new event. It does not appear on the map yet — flip on
   **Organizer mode** in the More tab, open the **Review queue**, approve it,
   and go back to the map to see it land.
+- Everything else is tappable too: the green chat button is a scripted
+  **concierge** that answers from the app's own data, search covers
+  sessions/people/booths, session cards add to **My Schedule** per persona,
+  exhibitors filter and favorite, and the More rows all open real sheets.
 
 ## How it differs from the mobile app
 
@@ -54,6 +59,8 @@ subpath without edits.
 - The Host form picks from preset downtown venues instead of live venue
   search, for the same reason.
 - State is in-memory only (the mobile app can also run against Supabase).
+- The concierge chat and DM replies are scripted from the mock data — no
+  model behind them, so they can never disagree with what's on screen.
 
 Everything under `src/offsite/` — domain types, fixtures, the grouping
 logic, the mock repository — is ported unchanged from the mobile repo, so

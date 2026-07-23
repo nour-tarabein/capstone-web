@@ -17,8 +17,27 @@ import {
 } from '../data/mock';
 import { repository } from '../offsite/data';
 import { setAdminMode, useAdminMode } from '../offsite/adminMode';
+import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+
+/** Every More row opens its sheet — no dead ends on this screen. */
+const ROW_TARGETS: Record<string, Overlay['kind']> = {
+  attendees: 'attendees',
+  activity: 'activity',
+  sponsors: 'sponsors',
+  speakers: 'speakers',
+  onDemand: 'ondemand',
+  games: 'games',
+  wifi: 'wifi',
+  agenda: 'agenda',
+  awards: 'awards',
+};
+
+function openRow(id: string) {
+  const kind = ROW_TARGETS[id];
+  if (kind) openOverlay({ kind } as Overlay);
+}
 
 export function MoreScreen() {
   const [generalOpen, setGeneralOpen] = useState(true);
@@ -56,9 +75,10 @@ export function MoreScreen() {
       <div className="screen-scroll">
         {moreMenuItems.map((item, index) => (
           <div key={item.id}>
-            <button className="more-row">
+            <button className="more-row" onClick={() => openRow(item.id)}>
               <Icon path={item.icon} size={24} color={colors.textDark} className="more-row-icon" />
               <span className="more-row-label">{item.label}</span>
+              <Icon path={mdiChevronRight} size={18} color={colors.textMutedDark} />
             </button>
             {index < moreMenuItems.length - 1 ? <div className="more-separator" /> : null}
           </div>
@@ -78,9 +98,10 @@ export function MoreScreen() {
         {generalOpen
           ? moreGeneralItems.map((item, index) => (
               <div key={item.id}>
-                <button className="more-row">
+                <button className="more-row" onClick={() => openRow(item.id)}>
                   <Icon path={item.icon} size={24} color={colors.textDark} className="more-row-icon" />
                   <span className="more-row-label more-row-label-truncate">{item.label}</span>
+                  <Icon path={mdiChevronRight} size={18} color={colors.textMutedDark} />
                 </button>
                 {index < moreGeneralItems.length - 1 ? (
                   <div className="more-separator" />
@@ -102,9 +123,10 @@ export function MoreScreen() {
 
         {inviteOpen
           ? moreInviteOnlyItems.map((item) => (
-              <button key={item.id} className="more-row">
+              <button key={item.id} className="more-row" onClick={() => openRow(item.id)}>
                 <Icon path={item.icon} size={24} color={colors.textDark} className="more-row-icon" />
                 <span className="more-row-label">{item.label}</span>
+                <Icon path={mdiChevronRight} size={18} color={colors.textMutedDark} />
               </button>
             ))
           : null}
@@ -167,7 +189,9 @@ export function MoreScreen() {
           <span className="location-map-chip">Tap to open map</span>
         </button>
 
-        <button className="exit-button">Exit event</button>
+        <button className="exit-button" onClick={() => openOverlay({ kind: 'exit' })}>
+          Exit event
+        </button>
       </div>
     </div>
   );

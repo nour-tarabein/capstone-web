@@ -7,7 +7,6 @@ import {
   mdiMenu,
 } from '@mdi/js';
 import { Icon } from './icons';
-import { colors } from './theme';
 import { HomeScreen } from './screens/Home';
 import { ScheduleScreen } from './screens/Schedule';
 import { ExhibitorsScreen } from './screens/Exhibitors';
@@ -15,6 +14,8 @@ import { MoreScreen } from './screens/More';
 import { MyEventScreen } from './screens/MyEvent';
 import { MapScreen } from './screens/MapScreen';
 import { ReviewQueueScreen } from './screens/ReviewQueue';
+import { OverlayHost } from './overlays';
+import { Toaster } from './ui/toast';
 
 /**
  * Hash-based routing so the browser back button works on the overlay screens
@@ -48,6 +49,14 @@ export function goBack() {
 
 export type TabId = 'home' | 'schedule' | 'exhibitors' | 'more' | 'myevent';
 
+let switchTab: (tab: TabId) => void = () => {};
+
+/** Lets sheets and screens jump to a tab without threading callbacks. */
+export function goToTab(tab: TabId) {
+  window.location.hash = '';
+  switchTab(tab);
+}
+
 const TABS: Array<{ id: TabId; icon: string; label: string; dot?: boolean }> = [
   { id: 'home', icon: mdiHomeOutline, label: 'Home' },
   { id: 'schedule', icon: mdiCalendarBlankOutline, label: 'Schedule' },
@@ -61,35 +70,23 @@ export function App() {
   const [tab, setTab] = useState<TabId>('home');
 
   useEffect(() => {
+    switchTab = setTab;
     const onHash = () => setRoute(parseRoute());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  if (route === 'map') {
-    return (
-      <div className="shell">
-        <MapScreen />
-      </div>
-    );
-  }
-
-  if (route === 'review') {
-    return (
-      <div className="shell">
-        <ReviewQueueScreen />
-      </div>
-    );
-  }
-
   return (
     <div className="shell">
       <div className="screen-area">
-        {tab === 'home' ? <HomeScreen onShowSchedule={() => setTab('schedule')} /> : null}
-        {tab === 'schedule' ? <ScheduleScreen /> : null}
-        {tab === 'exhibitors' ? <ExhibitorsScreen /> : null}
-        {tab === 'more' ? <MoreScreen /> : null}
-        {tab === 'myevent' ? <MyEventScreen /> : null}
+        {/* Keyed so switching tabs replays the entrance animation. */}
+        <div className="tab-page" key={tab}>
+          {tab === 'home' ? <HomeScreen /> : null}
+          {tab === 'schedule' ? <ScheduleScreen /> : null}
+          {tab === 'exhibitors' ? <ExhibitorsScreen /> : null}
+          {tab === 'more' ? <MoreScreen /> : null}
+          {tab === 'myevent' ? <MyEventScreen /> : null}
+        </div>
       </div>
 
       <nav className="tab-bar">
@@ -98,20 +95,36 @@ export function App() {
           return (
             <button
               key={t.id}
-              className="tab-button"
+              className={active ? 'tab-button tab-button-active' : 'tab-button'}
               onClick={() => setTab(t.id)}
               aria-label={t.label}
               aria-current={active ? 'page' : undefined}
             >
-              <span className={active ? 'tab-active-bar' : 'tab-active-bar tab-active-bar-hidden'} />
               <span className="tab-icon-wrap">
-                <Icon path={t.icon} size={26} color={colors.green} />
+                <Icon path={t.icon} size={24} color="currentColor" />
                 {t.dot ? <span className="tab-dot" /> : null}
               </span>
+              <span className="tab-label">{t.label}</span>
             </button>
           );
         })}
       </nav>
+
+      {/* Full-screen routes slide in over the live tabs, native-push style,
+          so tab scroll positions and state survive the round trip. */}
+      {route === 'map' ? (
+        <div className="route-layer">
+          <MapScreen />
+        </div>
+      ) : null}
+      {route === 'review' ? (
+        <div className="route-layer">
+          <ReviewQueueScreen />
+        </div>
+      ) : null}
+
+      <OverlayHost />
+      <Toaster />
     </div>
   );
 }

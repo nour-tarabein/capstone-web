@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { mdiCheck, mdiMapMarkerOutline, mdiOpenInNew } from '@mdi/js';
 import type {
   Attendee,
   AttendingList,
@@ -7,12 +8,16 @@ import type {
 } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
 import { milesBetween } from '../offsite/ingestion/curate';
-import { formatTime, sourceLabels } from '../offsite/format';
+import { formatTime, sourceColors, sourceLabels } from '../offsite/format';
 import { SourceBadge } from './SourceBadge';
 import { AttendingListView } from './AttendingList';
+import { Sheet } from '../ui/Sheet';
+import { Burst } from '../ui/Burst';
+import { Icon } from '../icons';
+import { colors } from '../theme';
 
 interface Props {
-  eventId: string | null;
+  eventId: string;
   viewer: Attendee;
   conference: Conference;
   onClose: () => void;
@@ -24,9 +29,9 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
   const [attending, setAttending] = useState<AttendingList | null>(null);
   const [anonymous, setAnonymous] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (!eventId) return;
     const [e, a] = await Promise.all([
       repository.getEvent(eventId),
       repository.getAttendingList(eventId, viewer.id),
@@ -36,26 +41,23 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
   }, [eventId, viewer.id]);
 
   useEffect(() => {
-    if (!eventId) {
-      setEvent(null);
-      setAttending(null);
-      setAnonymous(false);
-      return;
-    }
     void refresh();
     return repository.subscribeToEvent(eventId, () => void refresh());
   }, [eventId, refresh]);
 
-  if (eventId === null) return null;
-
   const going = attending ? !attending.gated : false;
 
   async function toggleRsvp() {
-    if (!eventId || busy) return;
+    if (busy) return;
     setBusy(true);
     try {
-      if (going) await repository.cancelRsvp(eventId, viewer.id);
-      else await repository.rsvp(eventId, viewer.id, anonymous);
+      if (going) {
+        await repository.cancelRsvp(eventId, viewer.id);
+      } else {
+        await repository.rsvp(eventId, viewer.id, anonymous);
+        // The payoff moment: the gate lifts and the room appears.
+        setBurstKey((k) => k + 1);
+      }
       await refresh();
       onRsvpChange();
     } finally {
@@ -66,67 +68,84 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
   const miles = event
     ? milesBetween(event.lat, event.lng, conference.venueLat, conference.venueLng)
     : 0;
+  const accent = event ? sourceColors[event.source] : colors.green;
 
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        {!event || !attending ? (
-          <div className="sheet-loader">Loading…</div>
-        ) : (
-          <div className="sheet-scroll">
-            <div className="sheet-grabber" />
+    <Sheet onClosed={onClose}>
+      {!event || !attending ? (
+        <div className="sheet-skeleton">
+          <span className="skeleton skeleton-chip" />
+          <span className="skeleton skeleton-title" />
+          <span className="skeleton skeleton-line" />
+          <span className="skeleton skeleton-line skeleton-line-short" />
+          <span className="skeleton skeleton-button" />
+        </div>
+      ) : (
+        <div
+          className="event-sheet"
+          style={{ ['--source-color' as string]: accent }}
+        >
+          <div className="event-sheet-glow" aria-hidden="true" />
 
-            <div className="sheet-head">
-              <SourceBadge source={event.source} />
-              <span className="sheet-time">{formatTime(event.startsAt)}</span>
-            </div>
+          <div className="sheet-head">
+            <SourceBadge source={event.source} />
+            <span className="sheet-time">{formatTime(event.startsAt)}</span>
+          </div>
 
-            <div className="sheet-title">{event.title}</div>
-            <div className="sheet-meta">
-              {event.venueName} · {miles.toFixed(1)} mi from {conference.venueName}
-            </div>
-            <p className="sheet-description">{event.description}</p>
+          <div className="sheet-title">{event.title}</div>
+          <div className="sheet-meta">
+            <Icon path={mdiMapMarkerOutline} size={14} color={colors.textSecondary} />
+            {event.venueName}
+            {miles < 0.05
+              ? '' // it IS the venue — "0.0 mi from itself" reads broken
+              : ` · ${miles.toFixed(1)} mi from ${conference.venueName}`}
+          </div>
+          <p className="sheet-description">{event.description}</p>
 
+          <div className="rsvp-wrap">
             <button
               className={going ? 'rsvp-button rsvp-going' : 'rsvp-button'}
               onClick={() => void toggleRsvp()}
               disabled={busy}
             >
+              {going ? <Icon path={mdiCheck} size={17} color={colors.green} /> : null}
               {busy ? '…' : going ? "You're going" : "I'm going"}
             </button>
-
-            {/* Per-RSVP anonymity: counted, never named (DESIGN.md #3). */}
-            {!going ? (
-              <div className="anon-row">
-                <button
-                  role="switch"
-                  aria-checked={anonymous}
-                  aria-label="Attend anonymously"
-                  className={anonymous ? 'toggle toggle-dark toggle-on' : 'toggle toggle-dark'}
-                  onClick={() => setAnonymous(!anonymous)}
-                >
-                  <span className="toggle-thumb" />
-                </button>
-                <span className="anon-label">Attend anonymously</span>
-              </div>
-            ) : null}
-
-            {/* We hold the intent; the source platform holds the ticket (DESIGN.md #2). */}
-            {event.source !== 'official' ? (
-              <a
-                className="handoff-link"
-                href={event.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get your ticket on {sourceLabels[event.source]} ↗
-              </a>
-            ) : null}
-
-            <AttendingListView attending={attending} conference={conference} />
+            {burstKey > 0 ? <Burst key={burstKey} /> : null}
           </div>
-        )}
-      </div>
-    </div>
+
+          {/* Per-RSVP anonymity: counted, never named (DESIGN.md #3). */}
+          {!going ? (
+            <div className="anon-row">
+              <button
+                role="switch"
+                aria-checked={anonymous}
+                aria-label="Attend anonymously"
+                className={anonymous ? 'toggle toggle-dark toggle-on' : 'toggle toggle-dark'}
+                onClick={() => setAnonymous(!anonymous)}
+              >
+                <span className="toggle-thumb" />
+              </button>
+              <span className="anon-label">Attend anonymously</span>
+            </div>
+          ) : null}
+
+          {/* We hold the intent; the source platform holds the ticket (DESIGN.md #2). */}
+          {event.source !== 'official' ? (
+            <a
+              className="handoff-link"
+              href={event.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get your ticket on {sourceLabels[event.source]}
+              <Icon path={mdiOpenInNew} size={13} color={colors.textSecondary} />
+            </a>
+          ) : null}
+
+          <AttendingListView attending={attending} conference={conference} />
+        </div>
+      )}
+    </Sheet>
   );
 }

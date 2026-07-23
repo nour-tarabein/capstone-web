@@ -47,8 +47,8 @@ export function ReviewQueueScreen() {
   const undecided = (pending ?? []).filter((e) => !decided[e.id]);
 
   return (
-    <div className="map-screen">
-      <header className="map-header">
+    <div className="screen">
+      <header className="review-header">
         <button className="back-button" onClick={goBack} aria-label="Close review queue">
           <Icon path={mdiChevronLeft} size={24} color={colors.text} />
         </button>

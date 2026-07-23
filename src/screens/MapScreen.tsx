@@ -11,7 +11,7 @@ import { nightLabels } from '../offsite/fixtures/conference';
 import { attendeesById, demoPersonaIds } from '../offsite/fixtures/attendees';
 import { milesBetween } from '../offsite/ingestion/curate';
 import { setViewerId, useViewerId } from '../offsite/persona';
-import { formatTime, sourceColors, sourceNeedsDarkText } from '../offsite/format';
+import { formatTime, initials, sourceColors, sourceNeedsDarkText } from '../offsite/format';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
@@ -20,11 +20,15 @@ import { colors } from '../theme';
  * with CARTO's dark basemap — no access token to ship, which is what lets the
  * demo run on any audience phone straight from GitHub Pages. Nearby search is
  * the one mobile feature left out: it needs the Mapbox Search API.
+ *
+ * All chrome floats in glass layers over a full-bleed map; selection is
+ * two-way (pin ↔ card) with the strip auto-scrolling to follow pin taps.
  */
 export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
 
   const viewerId = useViewerId();
   const [conference, setConference] = useState<Conference | null>(null);
@@ -77,7 +81,7 @@ export function MapScreen() {
     L.marker([conference.venueLat, conference.venueLng], {
       icon: L.divIcon({
         className: '',
-        html: '<div class="venue-pin"><div class="venue-pin-dot"></div></div>',
+        html: '<div class="venue-pin"><div class="venue-pin-ring"></div><div class="venue-pin-dot"></div></div>',
         iconSize: [22, 22],
         iconAnchor: [11, 11],
       }),
@@ -94,6 +98,15 @@ export function MapScreen() {
     };
   }, [conference]);
 
+  const select = useCallback((eventId: string, open: boolean) => {
+    setSelectedEventId(eventId);
+    if (open) setOpenEventId(eventId);
+    // Bring the matching strip card into view when a pin is tapped.
+    stripRef.current
+      ?.querySelector(`[data-event-id="${eventId}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, []);
+
   // Event pins re-render on every data change; the map itself never remounts.
   useEffect(() => {
     const layer = markersRef.current;
@@ -101,24 +114,27 @@ export function MapScreen() {
     layer.clearLayers();
     if (!showTonight) return;
 
-    for (const event of events) {
+    events.forEach((event, i) => {
       const count = goingCounts[event.id] ?? 0;
       const selected = event.id === selectedEventId;
       const dark = sourceNeedsDarkText[event.source];
+      const color = sourceColors[event.source];
       const icon = L.divIcon({
         className: '',
-        html: `<div class="map-pin${selected ? ' map-pin-selected' : ''}" style="background:${sourceColors[event.source]};color:${dark ? '#111111' : '#FFFFFF'}">${count > 0 ? count : ''}</div>`,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
+        html:
+          `<div class="pin-drop" style="animation-delay:${i * 55}ms">` +
+          (selected ? `<div class="map-pin-halo" style="background:${color}"></div>` : '') +
+          `<div class="map-pin${selected ? ' map-pin-selected' : ''}" ` +
+          `style="background:${color};color:${dark ? '#111111' : '#FFFFFF'};--pin-glow:${color}66">` +
+          `${count > 0 ? count : ''}</div></div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
       });
-      L.marker([event.lat, event.lng], { icon })
-        .on('click', () => {
-          setSelectedEventId(event.id);
-          setOpenEventId(event.id);
-        })
+      L.marker([event.lat, event.lng], { icon, riseOnHover: true })
+        .on('click', () => select(event.id, true))
         .addTo(layer);
-    }
-  }, [events, goingCounts, selectedEventId, showTonight]);
+    });
+  }, [events, goingCounts, selectedEventId, showTonight, select]);
 
   // Fit the night's slate plus the venue, leaving room for the floating chrome.
   useEffect(() => {
@@ -129,130 +145,146 @@ export function MapScreen() {
     );
     bounds.extend([conference.venueLat, conference.venueLng]);
     map.fitBounds(bounds, {
-      paddingTopLeft: [40, 150],
-      paddingBottomRight: [40, 210],
+      paddingTopLeft: [40, 170],
+      paddingBottomRight: [40, 230],
     });
   }, [events, conference]);
 
+  const openEvent = openEventId ? events.find((e) => e.id === openEventId) : null;
+
   return (
     <div className="map-screen">
+      <div ref={containerRef} className="map-container" />
+
       <header className="map-header">
-        <button className="back-button" onClick={goBack} aria-label="Close map">
-          <Icon path={mdiChevronLeft} size={24} color={colors.text} />
+        <button className="back-button glass-button" onClick={goBack} aria-label="Close map">
+          <Icon path={mdiChevronLeft} size={22} color={colors.text} />
         </button>
-        <div className="map-header-text">
+        <div className="map-header-text glass-panel">
           <div className="map-title">Tonight Nearby</div>
-          <div className="map-subtitle">{conference?.city ?? ''}</div>
+          <div className="map-subtitle">
+            {conference
+              ? `${conference.city} · ${events.length} event${events.length === 1 ? '' : 's'}`
+              : 'Loading…'}
+          </div>
         </div>
         <span className="back-button" />
       </header>
 
-      <div className="map-wrap">
-        <div ref={containerRef} className="map-container" />
+      <div className="map-overlay-top">
+        <div className="chip-row">
+          <button
+            className={showTonight ? 'chip chip-active' : 'chip'}
+            onClick={() => setShowTonight((v) => !v)}
+          >
+            <Icon
+              path={mdiWeatherNight}
+              size={14}
+              color={showTonight ? colors.textDark : colors.text}
+            />
+            Tonight
+          </button>
+        </div>
 
-        <div className="map-overlay-top">
-          <div className="chip-row">
+        {showTonight && conference ? (
+          <div className="nights-row">
+            {conference.nights.map((n) => (
+              <button
+                key={n}
+                className={n === night ? 'night-chip night-chip-active' : 'night-chip'}
+                onClick={() => setNight(n)}
+              >
+                {nightLabels[n] ?? n}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {showTonight && events.length > 0 && conference ? (
+        <div className="map-bottom">
+          <div className="persona-row">
+            <div className="persona-scroll">
+              <span className="persona-label">Viewing as</span>
+              {demoPersonaIds.map((id) => {
+                const person = attendeesById.get(id);
+                if (!person) return null;
+                const active = id === viewerId;
+                return (
+                  <button
+                    key={id}
+                    className={active ? 'persona persona-active' : 'persona'}
+                    onClick={() => setViewerId(id)}
+                  >
+                    <span className="persona-avatar">{initials(person.name)}</span>
+                    {person.name.split(' ')[0]}
+                  </button>
+                );
+              })}
+            </div>
             <button
-              className={showTonight ? 'chip chip-active' : 'chip'}
-              onClick={() => setShowTonight((v) => !v)}
+              className="host-button"
+              onClick={() => setHosting(true)}
+              aria-label="Host your own event"
             >
-              <Icon
-                path={mdiWeatherNight}
-                size={14}
-                color={showTonight ? colors.textDark : colors.text}
-              />
-              Tonight
+              <Icon path={mdiPlus} size={15} color={colors.textDark} />
+              Host
             </button>
           </div>
 
-          {showTonight && conference ? (
-            <div className="nights-row">
-              {conference.nights.map((n) => (
+          <div className="event-strip" ref={stripRef}>
+            {events.map((event, i) => {
+              const going = goingCounts[event.id] ?? 0;
+              const miles = milesBetween(
+                event.lat,
+                event.lng,
+                conference.venueLat,
+                conference.venueLng,
+              );
+              const selected = event.id === selectedEventId;
+              return (
                 <button
-                  key={n}
-                  className={n === night ? 'night-chip night-chip-active' : 'night-chip'}
-                  onClick={() => setNight(n)}
+                  key={event.id}
+                  data-event-id={event.id}
+                  className={selected ? 'event-card event-card-selected' : 'event-card'}
+                  style={{
+                    animationDelay: `${Math.min(i, 5) * 60}ms`,
+                    ['--source-color' as string]: sourceColors[event.source],
+                  }}
+                  onClick={() => select(event.id, true)}
                 >
-                  {nightLabels[n] ?? n}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        {showTonight && events.length > 0 && conference ? (
-          <div className="map-bottom">
-            <div className="persona-row">
-              <div className="persona-scroll">
-                <span className="persona-label">Viewing as</span>
-                {demoPersonaIds.map((id) => {
-                  const person = attendeesById.get(id);
-                  if (!person) return null;
-                  return (
-                    <button
-                      key={id}
-                      className={id === viewerId ? 'persona persona-active' : 'persona'}
-                      onClick={() => setViewerId(id)}
-                    >
-                      {person.name.split(' ')[0]}
-                    </button>
-                  );
-                })}
-              </div>
-              <button
-                className="host-button"
-                onClick={() => setHosting(true)}
-                aria-label="Host your own event"
-              >
-                <Icon path={mdiPlus} size={15} color={colors.textDark} />
-                Host
-              </button>
-            </div>
-
-            <div className="event-strip">
-              {events.map((event) => {
-                const going = goingCounts[event.id] ?? 0;
-                const miles = milesBetween(
-                  event.lat,
-                  event.lng,
-                  conference.venueLat,
-                  conference.venueLng,
-                );
-                const selected = event.id === selectedEventId;
-                return (
-                  <button
-                    key={event.id}
-                    className={selected ? 'event-card event-card-selected' : 'event-card'}
-                    onClick={() => {
-                      setSelectedEventId(event.id);
-                      setOpenEventId(event.id);
-                    }}
-                  >
+                  <span className="event-rail" />
+                  <span className="event-card-body">
                     <span className="event-head">
                       <SourceBadge source={event.source} />
                       <span className="event-time">{formatTime(event.startsAt)}</span>
                     </span>
                     <span className="event-title">{event.title}</span>
                     <span className="event-meta">
-                      {event.venueName} · {miles.toFixed(1)} mi
+                      {event.venueName}
+                      {miles < 0.05 ? '' : ` · ${miles.toFixed(1)} mi`}
                     </span>
                     {/* Never render a literal "0 going" (DESIGN.md #8). */}
-                    <span className="event-going">
-                      {going > 0
-                        ? `${going} attending`
-                        : `Be the first from ${conference.name.split(' ')[0]}`}
+                    <span className={going > 0 ? 'event-going' : 'event-going event-going-first'}>
+                      {going > 0 ? (
+                        <>
+                          <span className="going-dot" />
+                          {going} attending
+                        </>
+                      ) : (
+                        `Be the first from ${conference.name.split(' ')[0]}`
+                      )}
                     </span>
-                  </button>
-                );
-              })}
-            </div>
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
-      {conference && viewer ? (
+      {hosting && conference && viewer ? (
         <HostSheet
-          visible={hosting}
           viewer={viewer}
           conference={conference}
           onClose={() => setHosting(false)}
@@ -260,9 +292,9 @@ export function MapScreen() {
         />
       ) : null}
 
-      {conference && viewer ? (
+      {openEvent && conference && viewer ? (
         <EventSheet
-          eventId={openEventId}
+          eventId={openEvent.id}
           viewer={viewer}
           conference={conference}
           onClose={() => setOpenEventId(null)}

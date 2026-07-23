@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import {
+  mdiCheck,
   mdiChevronDown,
   mdiChevronUp,
   mdiMapMarkerOutline,
+  mdiPlus,
   mdiStarFourPoints,
 } from '@mdi/js';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -11,9 +13,13 @@ import {
   scheduleDays,
   scheduleTabs,
   sessionGuide,
+  speakersBySession,
 } from '../data/mock';
-import { attendeesById } from '../offsite/fixtures/attendees';
 import { useViewerId } from '../offsite/persona';
+import { isOnSchedule, toggleSession, useScheduleVersion } from '../myschedule';
+import { attendeesById } from '../offsite/fixtures/attendees';
+import { openOverlay } from '../overlays';
+import { toast } from '../ui/toast';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
@@ -24,28 +30,36 @@ export function ScheduleScreen() {
   const [activeDay, setActiveDay] = useState(scheduleDays[0].night);
   const [activeCategory, setActiveCategory] = useState('All Sessions');
   const [promoOpen, setPromoOpen] = useState(true);
-  const viewer = attendeesById.get(useViewerId());
+  const viewerId = useViewerId();
+  const viewer = attendeesById.get(viewerId);
+  const scheduleVersion = useScheduleVersion();
 
   const sessions = useMemo(() => {
     let list = sessionGuide.filter((s) => s.day === activeDay);
     if (activeTab === 'My Schedule') {
-      // Registered sessions come from the persona; official evening events
-      // are on everyone's schedule, same as their pre-seeded RSVPs.
-      list = list.filter((s) => s.official || viewer?.sessionIds.includes(s.id));
+      // Registered sessions come from the persona plus anything added live;
+      // official evening events are on everyone's schedule.
+      list = list.filter((s) => s.official || isOnSchedule(viewerId, s.id));
     } else if (activeTab === 'Recommended') {
       list = list.filter(
         (s) =>
           s.track !== undefined &&
           viewer !== undefined &&
           viewer.interests.includes(s.track) &&
-          !viewer.sessionIds.includes(s.id),
+          !isOnSchedule(viewerId, s.id),
       );
     }
     if (activeCategory !== 'All Sessions') {
       list = list.filter((s) => s.track === activeCategory);
     }
     return list;
-  }, [activeTab, activeDay, activeCategory, viewer]);
+  }, [activeTab, activeDay, activeCategory, viewer, viewerId, scheduleVersion]);
+
+  function quickToggle(e: React.MouseEvent, sessionId: string) {
+    e.stopPropagation();
+    const nowOn = toggleSession(viewerId, sessionId);
+    toast(nowOn ? 'Added to your schedule' : 'Removed from your schedule');
+  }
 
   return (
     <div className="screen">
@@ -68,7 +82,7 @@ export function ScheduleScreen() {
         {promoOpen ? (
           <div className="promo-card">
             <div className="promo-top">
-              <Icon path={mdiStarFourPoints} size={18} color={colors.text} />
+              <Icon path={mdiStarFourPoints} size={18} color={colors.green} />
               <button
                 className="icon-button"
                 onClick={() => setPromoOpen(false)}
@@ -124,25 +138,66 @@ export function ScheduleScreen() {
         </div>
 
         {sessions.length === 0 ? (
-          <p className="empty-text">No sessions here — try another day or track.</p>
+          <p className="empty-text">
+            {activeTab === 'My Schedule'
+              ? 'Nothing here yet — add sessions from the Session Guide.'
+              : 'No sessions here — try another day or track.'}
+          </p>
         ) : (
-          sessions.map((session) => (
-            <div key={session.id} className="session-card">
-              <div className="session-top">
-                <span className="session-time">{session.time}</span>
-                {session.official ? (
-                  <span className="official-badge">Official</span>
-                ) : session.track ? (
-                  <span className="track-chip">{session.track}</span>
-                ) : null}
-              </div>
-              <div className="session-title">{session.title}</div>
-              <div className="session-meta-row">
-                <Icon path={mdiMapMarkerOutline} size={14} color={colors.textSecondary} />
-                <span className="session-room">{session.room}</span>
-              </div>
-            </div>
-          ))
+          sessions.map((session, i) => {
+            const speaker = speakersBySession.get(session.id);
+            const onSchedule = isOnSchedule(viewerId, session.id);
+            return (
+              <button
+                key={session.id}
+                className="session-card"
+                style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+                onClick={() => openOverlay({ kind: 'session', sessionId: session.id })}
+              >
+                <span className="session-top">
+                  <span className="session-time">{session.time}</span>
+                  <span className="session-top-right">
+                    {session.official ? (
+                      <span className="official-badge">Official</span>
+                    ) : session.track ? (
+                      <span className="track-chip">{session.track}</span>
+                    ) : null}
+                    {!session.official ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label={
+                          onSchedule ? 'Remove from my schedule' : 'Add to my schedule'
+                        }
+                        className={onSchedule ? 'quick-add quick-add-on' : 'quick-add'}
+                        onClick={(e) => quickToggle(e, session.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            quickToggle(e as unknown as React.MouseEvent, session.id);
+                          }
+                        }}
+                      >
+                        <Icon
+                          path={onSchedule ? mdiCheck : mdiPlus}
+                          size={16}
+                          color={onSchedule ? colors.textDark : colors.green}
+                        />
+                      </span>
+                    ) : null}
+                  </span>
+                </span>
+                <span className="session-title">{session.title}</span>
+                <span className="session-meta-row">
+                  <Icon path={mdiMapMarkerOutline} size={14} color={colors.textSecondary} />
+                  <span className="session-room">
+                    {session.room}
+                    {speaker ? ` · ${speaker.name}` : ''}
+                  </span>
+                </span>
+              </button>
+            );
+          })
         )}
       </div>
     </div>
