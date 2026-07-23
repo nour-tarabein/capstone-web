@@ -75,6 +75,121 @@ export const sessionGuide: ScheduleSession[] = [
   { id: 'closing-party', title: 'Closing Party', day: '2026-09-17', time: '8:00 PM – 12:00 AM', room: "Banger's", official: true },
 ];
 
+/** One speaker per session. Companies come from the exhibitor list so the
+ *  speakers, booths, and attendee roster describe one consistent world. */
+export type Speaker = {
+  sessionId: string;
+  name: string;
+  title: string;
+  company: string;
+};
+
+export const speakers: Speaker[] = [
+  { sessionId: 'keynote', name: 'Imani Cole', title: 'CEO', company: 'Aurora Stagecraft' },
+  { sessionId: 's1', name: 'Wes Tanaka', title: 'VP of AI Infrastructure', company: 'Northwind' },
+  { sessionId: 's2', name: 'Freya Lindholm', title: 'Design Systems Lead', company: 'Loomis' },
+  { sessionId: 's3', name: 'Andre Boateng', title: 'Head of Developer Experience', company: 'Fernweh' },
+  { sessionId: 's4', name: 'Carmen Ruiz', title: 'Payments Architect', company: 'Cadence' },
+  { sessionId: 's5', name: 'Ollie Hart', title: 'Principal Engineer', company: 'Sable' },
+  { sessionId: 's6', name: 'Dr. Lena Voss', title: 'Chief Scientist', company: 'Verdant' },
+  { sessionId: 's7', name: 'Mira Chandra', title: 'Research Lead', company: 'Loomis' },
+  { sessionId: 's8', name: 'Jonas Weber', title: 'Accessibility Lead', company: 'Kestrel' },
+  { sessionId: 's9', name: 'Tessa Marino', title: 'ML Platform Lead', company: 'Northwind' },
+  { sessionId: 's10', name: 'Ray Okafor', title: 'SRE Manager', company: 'Sable' },
+];
+
+export const speakersBySession = new Map(speakers.map((s) => [s.sessionId, s]));
+
+/** Blurbs for the session detail sheet. */
+export const sessionDescriptions: Record<string, string> = {
+  keynote:
+    'Imani Cole opens the summit with where the Texas tech scene is heading — and three product reveals from the main stage.',
+  s1: 'Serving models without a blank-check GPU budget: quantization, batching, and the caching tricks that actually survive production.',
+  s2: 'How a design system earns its keep between seed and Series B — and the parts you should refuse to build too early.',
+  s3: 'Why internal tooling keeps losing to the tools your engineers download themselves, and how to close the gap.',
+  s4: 'Instant payments, stablecoin rails, and what 2026 regulation means for anyone moving money in the US.',
+  s5: 'Platform engineering practices for teams too small to staff a platform team.',
+  s6: 'Public climate datasets are a mess. Here is how to build products on them anyway.',
+  s7: 'A working research practice for teams of one or two — cadence, tooling, and stakeholder buy-in.',
+  s8: 'Shipping accessible by default: the audit that becomes a habit instead of a quarterly scramble.',
+  s9: 'Evals that predict user-visible quality, and the ones that only predict your leaderboard.',
+  s10: 'Incident response that protects the humans running it: rotations, handoffs, and blameless reviews that stay blameless.',
+};
+
+/** My Event updates. The first `unreadUpdateCount` are the fresh ones. */
+export const updates = [
+  {
+    id: 'u1',
+    title: 'Kick off the week!',
+    body: 'Summit Opening Reception starts at 6:00 PM! Head to the Terrace for great vibes, new connections, and local bites.',
+    time: '2:05 PM',
+  },
+  {
+    id: 'u2',
+    title: 'Room change',
+    body: 'Payments Infrastructure in 2026 has moved from Room 204 to Ballroom B. Your schedule is already updated.',
+    time: '11:40 AM',
+  },
+  {
+    id: 'u3',
+    title: 'Badge pickup is open',
+    body: 'Registration desk is open until 7:00 PM on Level 1 — grab your badge before the reception.',
+    time: 'Yesterday',
+  },
+];
+
+export const unreadUpdateCount = 2;
+
+/** Activity feed posts, authored by people from the attendee roster. */
+export const activityFeed = [
+  {
+    id: 'f1',
+    author: 'Maya Okonkwo',
+    time: '1h',
+    text: 'That keynote demo was unreal. Who else is headed to Scaling Inference on a Budget at 10:30?',
+    likes: 12,
+  },
+  {
+    id: 'f2',
+    author: 'Tomas Vega',
+    time: '2h',
+    text: 'Booth V13 has cold brew. You’re welcome.',
+    likes: 31,
+  },
+  {
+    id: 'f3',
+    author: 'Priya Nair',
+    time: '3h',
+    text: 'Design folks — Research Ops for Small Teams, tomorrow 9:30 in Room 210. Come say hi 👋',
+    likes: 18,
+  },
+  {
+    id: 'f4',
+    author: 'Ben Kowalski',
+    time: '4h',
+    text: 'Dropped a stack of holographic stickers at the Kestrel booth (S9). First come first served.',
+    likes: 9,
+  },
+];
+
+/** Game Center: challenges the viewer can complete live, plus a leaderboard. */
+export const gameChallenges = [
+  { id: 'g1', label: 'Visit 3 exhibitor booths', points: 150 },
+  { id: 'g2', label: 'Scan a fellow attendee’s badge', points: 100 },
+  { id: 'g3', label: 'Go to an off-site event tonight', points: 200 },
+  { id: 'g4', label: 'Rate a session in the app', points: 50 },
+];
+
+export const gameLeaderboard = [
+  { name: 'Rin Takahashi', points: 1240 },
+  { name: 'Kofi Mensah', points: 1105 },
+  { name: 'Ana Belova', points: 980 },
+  { name: 'Eli Brandt', points: 795 },
+  { name: 'Hana Kim', points: 760 },
+];
+
+export const wifiInfo = { ssid: 'LonestarSummit', password: 'howdy-2026' };
+
 export const exhibitorFilters = ['Sponsorship level', 'Booth section'];
 
 export type Exhibitor = {
@@ -83,20 +198,23 @@ export type Exhibitor = {
   booth: string;
   sponsorship?: string;
   section: string;
+  blurb: string;
 };
 
 /** Fictional companies, matching the mocked attendee roster where possible
  *  (src/offsite/fixtures/attendees.ts) so the demo tells one story. */
 export const exhibitors: Exhibitor[] = [
-  { id: '1', name: 'Aurora Stagecraft', booth: 'E2', sponsorship: 'Platinum', section: 'A' },
-  { id: '2', name: 'Cadence', booth: 'V13', sponsorship: 'Gold', section: 'C' },
-  { id: '3', name: 'Fernweh', booth: 'S10', section: 'F' },
-  { id: '4', name: 'Kestrel', booth: 'S9', section: 'K' },
-  { id: '5', name: 'Loomis', booth: 'E16', section: 'L' },
-  { id: '6', name: 'Northwind', booth: 'V15', section: 'N' },
-  { id: '7', name: 'Sable', booth: 'E11', sponsorship: 'Silver', section: 'S' },
-  { id: '8', name: 'Verdant', booth: 'V7', section: 'V' },
+  { id: '1', name: 'Aurora Stagecraft', booth: 'E2', sponsorship: 'Platinum', section: 'A', blurb: 'Event production and staging for live tech launches — the team behind this year’s main stage.' },
+  { id: '2', name: 'Cadence', booth: 'V13', sponsorship: 'Gold', section: 'C', blurb: 'Payments infrastructure for marketplaces. Ask for a demo of instant payouts (and the cold brew).' },
+  { id: '3', name: 'Fernweh', booth: 'S10', section: 'F', blurb: 'Developer-experience tooling that meets your engineers where they already work.' },
+  { id: '4', name: 'Kestrel', booth: 'S9', section: 'K', blurb: 'Data platform for product teams. Sticker drop at the booth all week.' },
+  { id: '5', name: 'Loomis', booth: 'E16', section: 'L', blurb: 'Design ops and research tooling for small, fast teams.' },
+  { id: '6', name: 'Northwind', booth: 'V15', section: 'N', blurb: 'ML infrastructure that scales down as gracefully as it scales up.' },
+  { id: '7', name: 'Sable', booth: 'E11', sponsorship: 'Silver', section: 'S', blurb: 'Security and reliability tooling for fintech workloads.' },
+  { id: '8', name: 'Verdant', booth: 'V7', section: 'V', blurb: 'Climate datasets, cleaned and versioned, with an API your team will actually use.' },
 ];
+
+export const exhibitorsById = new Map(exhibitors.map((e) => [e.id, e]));
 
 export const moreMenuItems = [
   { id: 'attendees', label: 'Attendees', icon: mdiAccountVoice },
