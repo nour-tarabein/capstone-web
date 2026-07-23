@@ -1,0 +1,21 @@
+/** Mirrors src/theme/colors.ts in the mobile app — keep the two in sync. */
+export const colors = {
+  background: '#0E1512',
+  backgroundElevated: '#1A2220',
+  card: '#2A2F2C',
+  cardLight: '#FFFFFF',
+  surfaceLight: '#FFFFFF',
+  border: '#3A403C',
+  borderLight: '#E5E5E5',
+  green: '#00E676',
+  greenDark: '#00C853',
+  greenMuted: '#1B3D2F',
+  text: '#FFFFFF',
+  textSecondary: '#A8B0AC',
+  textDark: '#111111',
+  textMutedDark: '#6B6B6B',
+  separator: '#E8E8E8',
+  notification: '#FF6B8A',
+  tabBar: '#0E1512',
+  header: '#0E1512',
+} as const;
