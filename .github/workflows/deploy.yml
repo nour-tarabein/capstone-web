@@ -25,6 +25,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Set these as repository secrets (Settings → Secrets and variables →
+          # Actions) to build against a live Supabase project. Left unset, they
+          # are empty and the app falls back to the in-memory fixture demo — so
+          # the site keeps building and working before the backend is wired up.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -31,6 +31,41 @@ Share that URL with the audience — a QR code of it on your last slide works
 well. The Vite config uses a relative base path, so the build works from any
 subpath without edits.
 
+## Live multi-device mode (Supabase)
+
+By default the app runs entirely in the browser: every phone is its own
+sandbox, and a refresh resets it. To make it genuinely multi-device — an event
+created or RSVP'd on one phone showing up on everyone else's — point it at a
+free Supabase project. Nothing else changes; the same UI just talks to Postgres
+instead of an in-memory store (the data layer was built as a swappable
+interface for exactly this).
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Open the project's **SQL editor**, paste the entire contents of
+   [`supabase/schema.sql`](supabase/schema.sql), and run it. That creates the
+   tables, the Row-Level Security policies, the functions the app calls, and
+   the same seed data the demo ships with. Re-running it later is how you reset
+   the demo to a clean slate.
+3. In **Settings → API**, copy the **Project URL** and the **anon public** key.
+   The anon key is safe to expose in the browser — the schema protects data
+   with RLS, not by hiding the key.
+4. **Local:** `cp .env.example .env.local`, paste the two values, `npm run dev`.
+5. **Deployed site:** add the two values as GitHub Actions secrets, then
+   re-run the deploy workflow:
+   ```sh
+   gh secret set VITE_SUPABASE_URL --body "https://YOUR-PROJECT.supabase.co"
+   gh secret set VITE_SUPABASE_ANON_KEY --body "YOUR-ANON-KEY"
+   gh workflow run "Deploy to GitHub Pages"
+   ```
+   With the secrets unset, the build falls back to the in-memory demo — so the
+   site keeps working before (and without) any of this.
+
+The two-phone moment: open the same event on two phones, RSVP on one, and the
+other's attending count updates within ~2.5s (it polls — a deliberate choice
+over websockets for demo-wifi robustness). A **hosted** event appears on the
+map once you approve it in the organizer **Review queue** (More → Organizer
+mode), because attendee submissions are gated on organizer approval in Postgres.
+
 ## Demo script
 
 - **Home → Tonight Nearby** opens the off-site networking map: official
@@ -58,7 +93,8 @@ subpath without edits.
   API, which needs a token.
 - The Host form picks from preset downtown venues instead of live venue
   search, for the same reason.
-- State is in-memory only (the mobile app can also run against Supabase).
+- State is in-memory by default; set the two `VITE_SUPABASE_*` vars to run
+  against the same Supabase backend the mobile app uses (see above).
 - The concierge chat and DM replies are scripted from the mock data — no
   model behind them, so they can never disagree with what's on screen.
 
