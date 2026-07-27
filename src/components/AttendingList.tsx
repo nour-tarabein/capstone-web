@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { mdiLockOutline } from '@mdi/js';
-import type { AttendingGroup, AttendingList, Conference } from '../offsite/domain/types';
-import { initials } from '../offsite/format';
+import type {
+  AttendingGroup,
+  AttendingList,
+  Conference,
+  OffsiteEvent,
+} from '../offsite/domain/types';
+import { initials, sourceLabels } from '../offsite/format';
 import { openOverlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -28,13 +33,37 @@ function tintFor(name: string): string {
   return AVATAR_TINTS[Math.abs(h) % AVATAR_TINTS.length];
 }
 
+/**
+ * The public crowd from the source platform, shown under the summit count.
+ *
+ * Safe to render on BOTH sides of the gate: it is static metadata the platform
+ * advertises, not an aggregate over our rsvps, so it names nobody. Seeing that
+ * a warehouse night has 840 people while still being unable to see who from the
+ * summit is going is the gate doing its job in public.
+ */
+function ExternalCount({ event }: { event?: OffsiteEvent }) {
+  if (!event?.externalGoingCount) return null;
+  return (
+    <div className="attending-external">
+      + {event.externalGoingCount.toLocaleString()} others going on{' '}
+      {sourceLabels[event.source]}
+    </div>
+  );
+}
+
 export function AttendingListView({
   attending,
   conference,
+  event,
 }: {
   attending: AttendingList;
   conference: Conference;
+  event?: OffsiteEvent;
 }) {
+  // "the summit" rather than the full conference name: the pair of lines reads
+  // as a comparison, and "26 from Lonestar Tech Summit 2026" buries the number.
+  const shortName = conference.name.split(' ').slice(0, 2).join(' ');
+
   if (attending.gated) {
     return (
       <div className="attending-section attending-gated">
@@ -46,6 +75,7 @@ export function AttendingListView({
             ? `${attending.goingCount} from ${conference.name} are going`
             : `Nobody from ${conference.name} yet`}
         </div>
+        <ExternalCount event={event} />
         <p className="gate-copy">
           RSVP to see who. We only show you the room if you&apos;re in it.
         </p>
@@ -56,11 +86,12 @@ export function AttendingListView({
   return (
     <div className="attending-section">
       <div className="attending-count">
-        {attending.goingCount} going
+        {attending.goingCount} from {shortName} going
         {attending.anonymousCount > 0 ? (
           <span className="attending-anon"> · {attending.anonymousCount} attending privately</span>
         ) : null}
       </div>
+      <ExternalCount event={event} />
 
       {attending.groups.map((group) =>
         group.kind === 'none' ? (

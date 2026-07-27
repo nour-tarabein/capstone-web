@@ -17,6 +17,9 @@ import {
 } from '../data/mock';
 import { repository } from '../offsite/data';
 import { setAdminMode, useAdminMode } from '../offsite/adminMode';
+import { attendees, attendeesById } from '../offsite/fixtures/attendees';
+import { initials } from '../offsite/format';
+import { setViewerId, useViewerId } from '../offsite/persona';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -44,6 +47,8 @@ export function MoreScreen() {
   const [inviteOpen, setInviteOpen] = useState(true);
   const adminMode = useAdminMode();
   const [pendingCount, setPendingCount] = useState(0);
+  const viewerId = useViewerId();
+  const viewer = attendeesById.get(viewerId);
 
   // Refresh when organizer mode turns on and again when the tab regains
   // focus after a trip to the review queue — the badge has to drop once
@@ -138,6 +143,35 @@ export function MoreScreen() {
           <span className="offsite-row-text">Tonight Nearby</span>
           <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
         </button>
+
+        <div className="section-divider" />
+
+        <div className="persona-settings">
+          <span className="more-section-title">Viewing as</span>
+          <p className="admin-hint persona-settings-hint">
+            {viewer
+              ? `${viewer.name} · ${viewer.title}`
+              : 'Pick who you are for this demo'}
+          </p>
+          <div className="persona-settings-list">
+            {attendees.map((person) => {
+              const active = person.id === viewerId;
+              return (
+                <button
+                  key={person.id}
+                  className={active ? 'persona persona-active' : 'persona'}
+                  onClick={() => setViewerId(person.id)}
+                >
+                  <span className="persona-avatar">{initials(person.name)}</span>
+                  <span className="persona-settings-name">
+                    <span>{person.name}</span>
+                    <span className="persona-settings-meta">{person.company}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="section-divider" />
 

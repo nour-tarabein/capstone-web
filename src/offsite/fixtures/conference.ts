@@ -8,12 +8,11 @@ export const conference: Conference = {
   venueName: 'Austin Convention Center',
   venueLat: 30.2637,
   venueLng: -97.7397,
-  nights: ['2026-09-15', '2026-09-16', '2026-09-17'],
+  nights: ['2026-07-30', '2026-07-31'],
   topicTags: ['AI', 'FinTech', 'DevTools', 'Design', 'Climate'],
 }
 
 export const nightLabels: Record<string, string> = {
-  '2026-09-15': 'Tue',
-  '2026-09-16': 'Wed',
-  '2026-09-17': 'Thu',
+  '2026-07-30': 'Thu',
+  '2026-07-31': 'Fri',
 }

@@ -7,10 +7,10 @@ import { milesBetween } from '../ingestion/curate'
 /**
  * The approved nightly slate — what actually reaches the map.
  *
- * Official conference events come first and carry pre-existing RSVPs, because
- * the event platform already holds those registration lists. That is what keeps the map
- * non-empty on night one (DESIGN.md #8) and it is the part a standalone
- * startup structurally cannot replicate.
+ * Thursday is one-per-source so the pitch map stays scannable. Opening
+ * Reception + Startup Crawl live here; handCollected / hostedEvents supply
+ * the remaining Thu sources. Friday can stack multiple pins per source.
+ * Official events carry pre-existing RSVPs (DESIGN.md #8).
  */
 const officialEvents: RawEvent[] = [
   {
@@ -19,25 +19,12 @@ const officialEvents: RawEvent[] = [
     sourceUrl: '#',
     title: 'Summit Opening Reception',
     description: 'Drinks and small plates on the terrace. Badge required.',
-    startsAt: '2026-09-15T18:00:00-05:00',
-    endsAt: '2026-09-15T21:00:00-05:00',
-    venueName: 'Austin Convention Center — Terrace',
+    startsAt: '2026-07-30T18:00:00-05:00',
+    endsAt: '2026-07-30T21:00:00-05:00',
+    venueName: 'Austin Convention Center - Terrace',
     lat: 30.2637,
     lng: -97.7397,
     tags: ['AI', 'FinTech', 'DevTools', 'Design', 'Climate'],
-  },
-  {
-    source: 'official',
-    sourceEventId: 'lts-sponsor-hh',
-    sourceUrl: '#',
-    title: 'Sponsor Happy Hour',
-    description: 'Hosted by our platinum sponsors. Open to all badge holders.',
-    startsAt: '2026-09-16T17:00:00-05:00',
-    endsAt: '2026-09-16T19:30:00-05:00',
-    venueName: 'Speakeasy',
-    lat: 30.2673,
-    lng: -97.7423,
-    tags: ['FinTech', 'DevTools'],
   },
   {
     source: 'official',
@@ -45,8 +32,8 @@ const officialEvents: RawEvent[] = [
     sourceUrl: '#',
     title: 'Closing Party',
     description: 'Rainey Street. Live music, tacos, and the last chance to swap numbers.',
-    startsAt: '2026-09-17T20:00:00-05:00',
-    endsAt: '2026-09-17T23:59:00-05:00',
+    startsAt: '2026-07-31T20:00:00-05:00',
+    endsAt: '2026-07-31T23:59:00-05:00',
     venueName: "Banger's",
     lat: 30.2551,
     lng: -97.7379,
@@ -59,11 +46,12 @@ const eventbriteEvents: RawEvent[] = [
   {
     source: 'eventbrite',
     sourceEventId: 'eb-startup-crawl',
+    externalGoingCount: 900,
     sourceUrl: 'https://www.eventbrite.com/e/austin-startup-crawl',
     title: 'Austin Startup Crawl',
     description: 'Forty companies, one warehouse, free beer. The classic Austin scramble.',
-    startsAt: '2026-09-15T18:30:00-05:00',
-    endsAt: '2026-09-15T22:00:00-05:00',
+    startsAt: '2026-07-30T18:30:00-05:00',
+    endsAt: '2026-07-30T22:00:00-05:00',
     venueName: 'Native Hostel',
     lat: 30.2688,
     lng: -97.7263,
@@ -71,29 +59,31 @@ const eventbriteEvents: RawEvent[] = [
   },
   {
     source: 'eventbrite',
-    sourceEventId: 'eb-stubbs-live',
-    sourceUrl: 'https://www.eventbrite.com/e/stubbs-live',
-    title: "Live at Stubb's",
-    description: 'Outdoor amphitheatre show, doors at 7. Ticketed.',
-    startsAt: '2026-09-16T19:00:00-05:00',
-    endsAt: '2026-09-16T23:00:00-05:00',
-    venueName: "Stubb's Bar-B-Q",
-    lat: 30.2686,
-    lng: -97.7364,
-    tags: [],
-  },
-  {
-    source: 'eventbrite',
     sourceEventId: 'eb-barton-springs',
+    externalGoingCount: 180,
     sourceUrl: 'https://www.eventbrite.com/e/barton-springs-sunset',
     title: 'Barton Springs Sunset Swim',
     description: 'Sixty-eight degrees year round. Bring a towel.',
-    startsAt: '2026-09-17T18:30:00-05:00',
-    endsAt: '2026-09-17T20:00:00-05:00',
+    startsAt: '2026-07-31T18:30:00-05:00',
+    endsAt: '2026-07-31T20:00:00-05:00',
     venueName: 'Barton Springs Pool',
     lat: 30.264,
     lng: -97.7713,
     tags: ['Climate'],
+  },
+  {
+    source: 'eventbrite',
+    sourceEventId: 'eb-two-step-lessons',
+    externalGoingCount: 260,
+    sourceUrl: 'https://www.eventbrite.com/e/white-horse-two-step',
+    title: 'Two-Step Lessons at the White Horse',
+    description: 'Free lesson at 7, band at 8, no experience and no partner needed.',
+    startsAt: '2026-07-31T19:00:00-05:00',
+    endsAt: '2026-07-31T23:00:00-05:00',
+    venueName: 'The White Horse',
+    lat: 30.2637,
+    lng: -97.7169,
+    tags: [],
   },
 ]
 
@@ -116,11 +106,58 @@ function approve(raw: RawEvent): OffsiteEvent {
   }
 }
 
+/**
+ * Attendee-hosted events the organizer has already approved.
+ *
+ * Same `attendee` source as the review queue, one state later: these went
+ * through the gate and reached the map, so the demo can show both ends of the
+ * submission loop without anyone having to approve something live. The host is
+ * named on the card — putting your name on an event you host is the opt-in
+ * (DESIGN.md #3), which is why these carry a real attendee id rather than null.
+ */
+const hostedEvents: OffsiteEvent[] = [
+  {
+    ...approve({
+      source: 'attendee',
+      sourceEventId: 'host-cto-fireside',
+      sourceUrl: '',
+      title: 'CTO Fireside: Shipping AI in Production',
+      description:
+        'Off the record, no slides. What actually broke when we put models in front of customers — and what we would do differently. Thirty seats.',
+      startsAt: '2026-07-30T18:00:00-05:00',
+      endsAt: '2026-07-30T20:30:00-05:00',
+      venueName: 'The Roosevelt Room',
+      lat: 30.2683,
+      lng: -97.7477,
+      tags: ['AI', 'DevTools'],
+    }),
+    curationRationale: 'Hosted by an attendee · approved by the organizer',
+    submittedByAttendeeId: 'a2', // David Quattrone, CTO
+  },
+  {
+    ...approve({
+      source: 'attendee',
+      sourceEventId: 'host-tech-meetup-hh',
+      sourceUrl: '',
+      title: 'Tech Meetup Happy Hour',
+      description:
+        'The engineering side of the summit, on a patio, before the parties start. Interns very much included.',
+      startsAt: '2026-07-31T17:30:00-05:00',
+      endsAt: '2026-07-31T20:00:00-05:00',
+      venueName: 'Easy Tiger',
+      lat: 30.2679,
+      lng: -97.7392,
+      tags: ['DevTools', 'AI'],
+    }),
+    curationRationale: 'Hosted by an attendee · approved by the organizer',
+    submittedByAttendeeId: 'a6', // Pradeep Mannakkara, SVP and CIO
+  },
+]
+
 export const events: OffsiteEvent[] = [
-  ...officialEvents,
-  ...eventbriteEvents,
-  ...handCollectedEvents,
-].map(approve)
+  ...[...officialEvents, ...eventbriteEvents, ...handCollectedEvents].map(approve),
+  ...hostedEvents,
+]
 
 /**
  * Attendee submissions still awaiting a decision.
@@ -139,8 +176,8 @@ export const pendingSubmissions: OffsiteEvent[] = [
       title: 'Board games + beer',
       description:
         'Grabbing the back room at Emerald Tavern. Bringing Wingspan and Azul, all welcome.',
-      startsAt: '2026-09-16T20:00:00-05:00',
-      endsAt: '2026-09-16T23:00:00-05:00',
+      startsAt: '2026-07-30T20:00:00-05:00',
+      endsAt: '2026-07-30T23:00:00-05:00',
       venueName: 'Emerald Tavern Games & Cafe',
       lat: 30.2711,
       lng: -97.7437,
@@ -148,7 +185,7 @@ export const pendingSubmissions: OffsiteEvent[] = [
     }),
     curationStatus: 'candidate',
     curationRationale: 'Submitted by an attendee',
-    submittedByAttendeeId: 'a6',
+    submittedByAttendeeId: 'a2', // David Quattrone
   },
   {
     ...approve({
@@ -157,8 +194,8 @@ export const pendingSubmissions: OffsiteEvent[] = [
       sourceUrl: '',
       title: 'Sunrise run along the trail',
       description: 'Easy 3 miles before the keynote. Meeting at the boardwalk entrance.',
-      startsAt: '2026-09-17T06:30:00-05:00',
-      endsAt: '2026-09-17T07:30:00-05:00',
+      startsAt: '2026-07-31T06:30:00-05:00',
+      endsAt: '2026-07-31T07:30:00-05:00',
       venueName: 'Ann and Roy Butler Trail',
       lat: 30.2523,
       lng: -97.7411,
@@ -166,7 +203,7 @@ export const pendingSubmissions: OffsiteEvent[] = [
     }),
     curationStatus: 'candidate',
     curationRationale: 'Submitted by an attendee',
-    submittedByAttendeeId: 'a17',
+    submittedByAttendeeId: 'a47', // Abhinav Pappu
   },
 ]
 
@@ -176,11 +213,12 @@ export const rejectedCandidates: OffsiteEvent[] = [
     ...approve({
       source: 'eventbrite',
       sourceEventId: 'eb-5k',
+      externalGoingCount: 340,
       sourceUrl: 'https://www.eventbrite.com/e/lady-bird-5k',
       title: 'Lady Bird Lake 5K',
       description: 'Charity fun run around the trail.',
-      startsAt: '2026-09-16T07:00:00-05:00',
-      endsAt: '2026-09-16T09:00:00-05:00',
+      startsAt: '2026-07-30T07:00:00-05:00',
+      endsAt: '2026-07-30T09:00:00-05:00',
       venueName: 'Auditorium Shores',
       lat: 30.2622,
       lng: -97.7515,

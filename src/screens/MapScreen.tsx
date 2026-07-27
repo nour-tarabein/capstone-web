@@ -5,13 +5,13 @@ import { goBack } from '../App';
 import { EventSheet } from '../components/EventSheet';
 import { HostSheet } from '../components/HostSheet';
 import { SourceBadge } from '../components/SourceBadge';
-import type { Attendee, Conference, OffsiteEvent } from '../offsite/domain/types';
+import type { Conference, OffsiteEvent } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
 import { nightLabels } from '../offsite/fixtures/conference';
-import { attendeesById, demoPersonaIds } from '../offsite/fixtures/attendees';
+import { attendeesById } from '../offsite/fixtures/attendees';
 import { milesBetween } from '../offsite/ingestion/curate';
-import { setViewerId, useViewerId } from '../offsite/persona';
-import { formatTime, initials, sourceColors, sourceNeedsDarkText } from '../offsite/format';
+import { useViewerId } from '../offsite/persona';
+import { formatTime, sourceColors, sourceLabels, sourceNeedsDarkText } from '../offsite/format';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
@@ -24,6 +24,17 @@ import { colors } from '../theme';
  * All chrome floats in glass layers over a full-bleed map; selection is
  * two-way (pin ↔ card) with the strip auto-scrolling to follow pin taps.
  */
+/**
+ * Open on tonight when the demo is running during the conference, so a
+ * presenter on day 2 lands on day 2 instead of the first night.
+ */
+function defaultNight(nights: string[]): string {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Chicago',
+  }).format(new Date());
+  return nights.includes(today) ? today : nights[0];
+}
+
 export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -31,8 +42,10 @@ export function MapScreen() {
   const stripRef = useRef<HTMLDivElement>(null);
 
   const viewerId = useViewerId();
+  // Local roster is source of truth for who "you" are — avoids a stale
+  // Supabase seed (e.g. old a3 = Priya) overriding the Cvent roster.
+  const viewer = attendeesById.get(viewerId) ?? null;
   const [conference, setConference] = useState<Conference | null>(null);
-  const [viewer, setViewer] = useState<Attendee | null>(null);
   const [night, setNight] = useState<string | null>(null);
   const [events, setEvents] = useState<OffsiteEvent[]>([]);
   const [goingCounts, setGoingCounts] = useState<Record<string, number>>({});
@@ -40,22 +53,30 @@ export function MapScreen() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [openEventId, setOpenEventId] = useState<string | null>(null);
   const [hosting, setHosting] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    void Promise.all([repository.getConference(), repository.getViewer()]).then(
-      ([c, v]) => {
+    void repository.getConference().then(
+      (c) => {
         setConference(c);
-        setViewer(v);
-        setNight((prev) => prev ?? c.nights[0]);
+        setNight((prev) =>
+          prev && c.nights.includes(prev) ? prev : defaultNight(c.nights),
+        );
       },
+      (err: unknown) => console.error('[map] getConference failed', err),
     );
-  }, [viewerId]);
+  }, []);
 
   const loadNight = useCallback(async () => {
     if (!night) return;
-    const list = await repository.listEventsForNight(night);
-    setEvents(list);
-    setGoingCounts(await repository.getGoingCounts(list.map((e) => e.id)));
+    try {
+      const list = await repository.listEventsForNight(night);
+      setEvents(list);
+      setGoingCounts(await repository.getGoingCounts(list.map((e) => e.id)));
+    } catch (err) {
+      console.error('[map] listEventsForNight failed', err);
+      setEvents([]);
+    }
   }, [night]);
 
   useEffect(() => {
@@ -67,13 +88,11 @@ export function MapScreen() {
     const container = containerRef.current;
     if (!conference || !container || mapRef.current) return;
 
-    const map = L.map(container, { zoomControl: false }).setView(
+    const map = L.map(container, { zoomControl: false, attributionControl: false }).setView(
       [conference.venueLat, conference.venueLng],
       14,
     );
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(map);
@@ -90,11 +109,13 @@ export function MapScreen() {
 
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
+    setMapReady(true);
 
     return () => {
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
+      setMapReady(false);
     };
   }, [conference]);
 
@@ -108,9 +129,11 @@ export function MapScreen() {
   }, []);
 
   // Event pins re-render on every data change; the map itself never remounts.
+  // Include mapReady so the first events response isn't dropped if it lands
+  // before the Leaflet layer exists.
   useEffect(() => {
     const layer = markersRef.current;
-    if (!layer) return;
+    if (!layer || !mapReady) return;
     layer.clearLayers();
     if (!showTonight) return;
 
@@ -134,7 +157,7 @@ export function MapScreen() {
         .on('click', () => select(event.id, true))
         .addTo(layer);
     });
-  }, [events, goingCounts, selectedEventId, showTonight, select]);
+  }, [events, goingCounts, selectedEventId, showTonight, select, mapReady]);
 
   // Fit the night's slate plus the venue, leaving room for the floating chrome.
   useEffect(() => {
@@ -205,22 +228,9 @@ export function MapScreen() {
         <div className="map-bottom">
           <div className="persona-row">
             <div className="persona-scroll">
-              <span className="persona-label">Viewing as</span>
-              {demoPersonaIds.map((id) => {
-                const person = attendeesById.get(id);
-                if (!person) return null;
-                const active = id === viewerId;
-                return (
-                  <button
-                    key={id}
-                    className={active ? 'persona persona-active' : 'persona'}
-                    onClick={() => setViewerId(id)}
-                  >
-                    <span className="persona-avatar">{initials(person.name)}</span>
-                    {person.name.split(' ')[0]}
-                  </button>
-                );
-              })}
+              <span className="persona-label">
+                You&apos;re {viewer?.name.split(' ')[0] ?? '…'}
+              </span>
             </div>
             <button
               className="host-button"
@@ -253,7 +263,6 @@ export function MapScreen() {
                   }}
                   onClick={() => select(event.id, true)}
                 >
-                  <span className="event-rail" />
                   <span className="event-card-body">
                     <span className="event-head">
                       <SourceBadge source={event.source} />
@@ -264,7 +273,9 @@ export function MapScreen() {
                       {event.venueName}
                       {miles < 0.05 ? '' : ` · ${miles.toFixed(1)} mi`}
                     </span>
-                    {/* Never render a literal "0 going" (DESIGN.md #8). */}
+                    {/* Never render a literal "0 going" (DESIGN.md #8).
+                        Summit RSVPs and the platform's public crowd are kept
+                        separate — externalGoingCount names nobody. */}
                     <span className={going > 0 ? 'event-going' : 'event-going event-going-first'}>
                       {going > 0 ? (
                         <>
@@ -275,6 +286,12 @@ export function MapScreen() {
                         `Be the first from ${conference.name.split(' ')[0]}`
                       )}
                     </span>
+                    {event.externalGoingCount ? (
+                      <span className="event-external">
+                        + {event.externalGoingCount.toLocaleString()} on{' '}
+                        {sourceLabels[event.source]}
+                      </span>
+                    ) : null}
                   </span>
                 </button>
               );

@@ -55,7 +55,7 @@ export function SearchSheet() {
         <div className="search-hints">
           <span className="field-label">Try</span>
           <div className="chip-cloud">
-            {['AI', 'Design', 'Northwind', 'Ballroom A', 'Maya'].map((hint) => (
+            {['AI', 'Design', 'Technology', 'Abhinav', 'Finance'].map((hint) => (
               <button key={hint} className="cloud-chip" onClick={() => setQuery(hint)}>
                 {hint}
               </button>

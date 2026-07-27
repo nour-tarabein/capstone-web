@@ -96,7 +96,8 @@ export function SponsorsSheet() {
 }
 
 export function OnDemandSheet() {
-  // Pretend "now" is Day 1 mid-afternoon, matching the My Event timeline.
+  // Pretend "now" is Day 1 (Thu) mid-afternoon, matching the My Event
+  // timeline: everything that has already run today, nothing later.
   const ready = new Set(['keynote', 's1', 's3', 's4']);
   return (
     <div>

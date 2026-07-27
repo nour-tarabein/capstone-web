@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { mdiMagnify, mdiSend } from '@mdi/js';
-import { attendees, attendeesById, demoPersonaIds } from '../offsite/fixtures/attendees';
+import { attendees, attendeesById } from '../offsite/fixtures/attendees';
 import { setViewerId, useViewerId } from '../offsite/persona';
 import { sessionTitles } from '../offsite/fixtures/sessions';
 import { initials } from '../offsite/format';
@@ -76,7 +76,6 @@ export function ProfileSheet({ attendeeId }: { attendeeId: string }) {
   if (!person) return null;
 
   const isViewer = person.id === viewerId;
-  const isPersona = (demoPersonaIds as readonly string[]).includes(person.id);
 
   return (
     <div>
@@ -115,7 +114,7 @@ export function ProfileSheet({ attendeeId }: { attendeeId: string }) {
       {isViewer ? (
         <p className="gate-copy">
           This is you — the persona you&apos;re demoing as. Switch personas from
-          the map or another attendee&apos;s profile.
+          More → Viewing as.
         </p>
       ) : (
         <div className="profile-actions">
@@ -125,18 +124,16 @@ export function ProfileSheet({ attendeeId }: { attendeeId: string }) {
           >
             Message
           </button>
-          {isPersona ? (
-            <button
-              className="rsvp-button rsvp-going"
-              onClick={() => {
-                setViewerId(person.id);
-                toast(`Now viewing as ${person.name.split(' ')[0]}`);
-                dismiss();
-              }}
-            >
-              View the demo as {person.name.split(' ')[0]}
-            </button>
-          ) : null}
+          <button
+            className="rsvp-button rsvp-going"
+            onClick={() => {
+              setViewerId(person.id);
+              toast(`Now viewing as ${person.name.split(' ')[0]}`);
+              dismiss();
+            }}
+          >
+            View the demo as {person.name.split(' ')[0]}
+          </button>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { mdiCheck, mdiMapMarkerOutline, mdiOpenInNew } from '@mdi/js';
+import { mdiAccountStarOutline, mdiCheck, mdiMapMarkerOutline, mdiOpenInNew } from '@mdi/js';
 import type {
   Attendee,
   AttendingList,
@@ -7,6 +7,7 @@ import type {
   OffsiteEvent,
 } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
+import { attendeesById } from '../offsite/fixtures/attendees';
 import { milesBetween } from '../offsite/ingestion/curate';
 import { formatTime, sourceColors, sourceLabels } from '../offsite/format';
 import { SourceBadge } from './SourceBadge';
@@ -69,6 +70,11 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
     ? milesBetween(event.lat, event.lng, conference.venueLat, conference.venueLng)
     : 0;
   const accent = event ? sourceColors[event.source] : colors.green;
+  // An attendee-hosted event names its host on the card: putting your name on
+  // the thing you host IS the opt-in, so there is nothing to gate here.
+  const host = event?.submittedByAttendeeId
+    ? attendeesById.get(event.submittedByAttendeeId)
+    : undefined;
 
   return (
     <Sheet onClosed={onClose}>
@@ -100,6 +106,20 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
               ? '' // it IS the venue — "0.0 mi from itself" reads broken
               : ` · ${miles.toFixed(1)} mi from ${conference.venueName}`}
           </div>
+          {/* Platform crowd — public metadata, safe above the reciprocity gate. */}
+          {event.externalGoingCount ? (
+            <div className="sheet-meta sheet-external">
+              {event.externalGoingCount.toLocaleString()} going on{' '}
+              {sourceLabels[event.source]}
+            </div>
+          ) : null}
+          {host ? (
+            <div className="sheet-meta sheet-host">
+              <Icon path={mdiAccountStarOutline} size={14} color={accent} />
+              Hosted by {host.name}
+              {host.title ? ` · ${host.title}` : ''}
+            </div>
+          ) : null}
           <p className="sheet-description">{event.description}</p>
 
           <div className="rsvp-wrap">
@@ -130,8 +150,10 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
             </div>
           ) : null}
 
-          {/* We hold the intent; the source platform holds the ticket (DESIGN.md #2). */}
-          {event.source !== 'official' ? (
+          {/* We hold the intent; the source platform holds the ticket (DESIGN.md #2).
+              Official and attendee-hosted events have no external platform to
+              hand off to — the RSVP above is the whole transaction. */}
+          {event.source !== 'official' && event.sourceUrl ? (
             <a
               className="handoff-link"
               href={event.sourceUrl}
@@ -143,7 +165,7 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
             </a>
           ) : null}
 
-          <AttendingListView attending={attending} conference={conference} />
+          <AttendingListView attending={attending} conference={conference} event={event} />
         </div>
       )}
     </Sheet>

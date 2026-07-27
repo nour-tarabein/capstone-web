@@ -45,6 +45,18 @@ export interface OffsiteEvent {
   lat: number
   lng: number
   tags: string[]
+  /**
+   * How many non-summit people the source platform says are going.
+   *
+   * Static metadata the platform advertises publicly, NOT an aggregate over our
+   * rsvps table. That distinction is the whole reason it can render while the
+   * attending list is still gated: there is no identity in it, so showing the
+   * size of the room gives nothing away about who is in it.
+   *
+   * Undefined for official and attendee-hosted events, which have no public
+   * audience beyond the conference.
+   */
+  externalGoingCount?: number
   /** Official conference after-parties, pinned by the organizer and pre-seeded
    *  with real RSVPs — this is what keeps the map non-empty (DESIGN.md #8). */
   isOfficial: boolean
@@ -56,7 +68,7 @@ export interface OffsiteEvent {
    *
    * Note this deliberately does NOT violate the no-reverse-lookup rule
    * (DESIGN.md #9). That rule protects *attendance*: you never get to ask
-   * "which events is Maya going to". Hosting is the opposite — a public,
+   * "which events is Abhinav going to". Hosting is the opposite — a public,
    * opt-in act, the same as being listed as an organizer. Your name is on the
    * event you propose, and the submission form says so before you submit.
    */

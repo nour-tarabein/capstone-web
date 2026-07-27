@@ -59,20 +59,22 @@ export type ScheduleSession = {
  *  events mirror the approved slate in fixtures/events.ts, so the guide and
  *  the map tell one story. */
 export const sessionGuide: ScheduleSession[] = [
-  { id: 'keynote', title: 'Opening Keynote', day: '2026-09-15', time: '9:00 – 10:00 AM', room: 'Main Hall' },
-  { id: 's1', title: sessionTitles.s1, day: '2026-09-15', time: '10:30 – 11:15 AM', room: 'Ballroom A', track: 'AI' },
-  { id: 's3', title: sessionTitles.s3, day: '2026-09-15', time: '11:30 AM – 12:15 PM', room: 'Ballroom B', track: 'DevTools' },
-  { id: 's4', title: sessionTitles.s4, day: '2026-09-15', time: '1:30 – 2:15 PM', room: 'Room 204', track: 'FinTech' },
-  { id: 'reception', title: 'Summit Opening Reception', day: '2026-09-15', time: '6:00 – 9:00 PM', room: 'Terrace', official: true },
-  { id: 's2', title: sessionTitles.s2, day: '2026-09-16', time: '9:30 – 10:15 AM', room: 'Ballroom B', track: 'Design' },
-  { id: 's5', title: sessionTitles.s5, day: '2026-09-16', time: '10:30 – 11:15 AM', room: 'Ballroom A', track: 'DevTools' },
-  { id: 's6', title: sessionTitles.s6, day: '2026-09-16', time: '11:30 AM – 12:15 PM', room: 'Room 204', track: 'Climate' },
-  { id: 's7', title: sessionTitles.s7, day: '2026-09-16', time: '1:30 – 2:15 PM', room: 'Room 210', track: 'Design' },
-  { id: 'happy-hour', title: 'Sponsor Happy Hour', day: '2026-09-16', time: '5:00 – 7:30 PM', room: 'Speakeasy', official: true },
-  { id: 's8', title: sessionTitles.s8, day: '2026-09-17', time: '9:30 – 10:15 AM', room: 'Ballroom B', track: 'Design' },
-  { id: 's9', title: sessionTitles.s9, day: '2026-09-17', time: '10:30 – 11:15 AM', room: 'Ballroom A', track: 'AI' },
-  { id: 's10', title: sessionTitles.s10, day: '2026-09-17', time: '11:30 AM – 12:15 PM', room: 'Room 204', track: 'DevTools' },
-  { id: 'closing-party', title: 'Closing Party', day: '2026-09-17', time: '8:00 PM – 12:00 AM', room: "Banger's", official: true },
+  // Day 1 (Thu). The afternoon after 2:15 is deliberately empty: that free
+  // block is the gap the My Event timeline offers to fill with the map.
+  { id: 'keynote', title: 'Opening Keynote', day: '2026-07-30', time: '9:00 – 10:00 AM', room: 'Main Hall' },
+  { id: 's1', title: sessionTitles.s1, day: '2026-07-30', time: '10:30 – 11:15 AM', room: 'Ballroom A', track: 'AI' },
+  { id: 's3', title: sessionTitles.s3, day: '2026-07-30', time: '11:30 AM – 12:15 PM', room: 'Ballroom B', track: 'DevTools' },
+  { id: 's4', title: sessionTitles.s4, day: '2026-07-30', time: '1:30 – 2:15 PM', room: 'Room 204', track: 'FinTech' },
+  { id: 'reception', title: 'Summit Opening Reception', day: '2026-07-30', time: '6:00 – 9:00 PM', room: 'Terrace', official: true },
+  // Day 2 (Fri). Carries the remaining tracks, since there is no third day.
+  { id: 's2', title: sessionTitles.s2, day: '2026-07-31', time: '9:30 – 10:15 AM', room: 'Ballroom B', track: 'Design' },
+  { id: 's5', title: sessionTitles.s5, day: '2026-07-31', time: '10:30 – 11:15 AM', room: 'Ballroom A', track: 'DevTools' },
+  { id: 's6', title: sessionTitles.s6, day: '2026-07-31', time: '11:30 AM – 12:15 PM', room: 'Room 204', track: 'Climate' },
+  { id: 's7', title: sessionTitles.s7, day: '2026-07-31', time: '1:30 – 2:15 PM', room: 'Room 210', track: 'Design' },
+  { id: 's8', title: sessionTitles.s8, day: '2026-07-31', time: '2:30 – 3:15 PM', room: 'Ballroom B', track: 'Design' },
+  { id: 's9', title: sessionTitles.s9, day: '2026-07-31', time: '3:30 – 4:15 PM', room: 'Ballroom A', track: 'AI' },
+  { id: 's10', title: sessionTitles.s10, day: '2026-07-31', time: '4:30 – 5:15 PM', room: 'Room 204', track: 'DevTools' },
+  { id: 'closing-party', title: 'Closing Party', day: '2026-07-31', time: '8:00 PM – 12:00 AM', room: "Banger's", official: true },
 ];
 
 /** One speaker per session. Companies come from the exhibitor list so the
@@ -144,30 +146,30 @@ export const unreadUpdateCount = 2;
 export const activityFeed = [
   {
     id: 'f1',
-    author: 'Maya Okonkwo',
+    author: 'Abhinav Pappu',
     time: '1h',
     text: 'That keynote demo was unreal. Who else is headed to Scaling Inference on a Budget at 10:30?',
     likes: 12,
   },
   {
     id: 'f2',
-    author: 'Tomas Vega',
+    author: 'Chuck Ghoorah',
     time: '2h',
     text: 'Booth V13 has cold brew. You’re welcome.',
     likes: 31,
   },
   {
     id: 'f3',
-    author: 'Priya Nair',
+    author: 'Paige Reeves',
     time: '3h',
-    text: 'Design folks — Research Ops for Small Teams, tomorrow 9:30 in Room 210. Come say hi 👋',
+    text: 'Design folks — Research Ops for Small Teams, tomorrow 9:30 in Room 210. Come say hi.',
     likes: 18,
   },
   {
     id: 'f4',
-    author: 'Ben Kowalski',
+    author: 'David Quattrone',
     time: '4h',
-    text: 'Dropped a stack of holographic stickers at the Kestrel booth (S9). First come first served.',
+    text: 'Dropped a stack of holographic stickers at the Technology lounge. First come first served.',
     likes: 9,
   },
 ];
@@ -181,11 +183,11 @@ export const gameChallenges = [
 ];
 
 export const gameLeaderboard = [
-  { name: 'Rin Takahashi', points: 1240 },
-  { name: 'Kofi Mensah', points: 1105 },
-  { name: 'Ana Belova', points: 980 },
-  { name: 'Eli Brandt', points: 795 },
-  { name: 'Hana Kim', points: 760 },
+  { name: 'Abhinav Pappu', points: 1240 },
+  { name: 'Paige Reeves', points: 1105 },
+  { name: 'Rohan Agarwal', points: 980 },
+  { name: 'Sherry Chen', points: 795 },
+  { name: 'Jake Keller', points: 760 },
 ];
 
 export const wifiInfo = { ssid: 'LonestarSummit', password: 'howdy-2026' };

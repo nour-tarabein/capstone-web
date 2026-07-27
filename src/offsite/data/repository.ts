@@ -16,7 +16,7 @@ import type {
  * Note what is deliberately ABSENT: there is no way to list events by person —
  * not for other attendees, and not even for the viewer. Discovery is
  * event-first, never person-first: you can ask "who is at this event", never
- * "which events is Maya at" (DESIGN.md #9). Leaving the reverse lookup out of
+ * "which events is Abhinav at" (DESIGN.md #9). Leaving the reverse lookup out of
  * the interface entirely is the cheapest way to guarantee no screen ever
  * accidentally builds one — and it means the client never needs SELECT on the
  * rsvps table at all, which is what lets RLS lock that table down completely.

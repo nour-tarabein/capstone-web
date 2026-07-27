@@ -12,6 +12,8 @@ import { groupCoAttendees } from '../domain/relevance'
 import type { Repository } from './repository'
 import { getViewerId } from '../persona'
 import { sessionTitles } from '../fixtures/sessions'
+import { attendeesById } from '../fixtures/attendees'
+import { conference as fixtureConference } from '../fixtures/conference'
 import { supabaseAnonKey, supabaseUrl } from './env'
 
 /**
@@ -38,27 +40,46 @@ export function createSupabaseRepository(): Repository {
     },
 
     async getViewer(): Promise<Attendee> {
-      const { data } = await client
+      const id = getViewerId()
+      const { data, error } = await client
         .from('attendees')
         .select('*')
-        .eq('id', getViewerId())
-        .single()
-      return toAttendee(data)
+        .eq('id', id)
+        .maybeSingle()
+      if (data && !error) return toAttendee(data)
+      // Roster can lag fixtures after a local rewrite — prefer the fixture so
+      // the UI never shows a retired fictional name (Maya / Priya).
+      const local = attendeesById.get(id)
+      if (local) return local
+      throw error ?? new Error(`Viewer ${id} not found`)
     },
 
     async listEventsForNight(night: string): Promise<OffsiteEvent[]> {
-      const { data } = await client
-        .from('events')
-        .select('*')
-        .eq('curation_status', 'approved')
-        .gte('starts_at', `${night}T00:00:00-05:00`)
-        .lte('starts_at', `${night}T23:59:59-05:00`)
-        .order('starts_at')
+      // unwrap, not a bare destructure: without it a failed query returns null
+      // and the map silently renders an empty night, which is indistinguishable
+      // from "no events tonight" and sends you hunting in the wrong place.
+      const { data } = unwrap(
+        await client
+          .from('events')
+          .select('*')
+          .eq('curation_status', 'approved')
+          .gte('starts_at', `${night}T00:00:00-05:00`)
+          .lte('starts_at', `${night}T23:59:59-05:00`)
+          .order('starts_at'),
+      )
+      if (!data?.length) {
+        console.warn(
+          `[offsite] no approved events for ${night}. Check the seed ran: ` +
+            `select curation_status, starts_at::date, count(*) from events group by 1,2;`,
+        )
+      }
       return (data ?? []).map(toEvent)
     },
 
     async getEvent(eventId: string): Promise<OffsiteEvent | null> {
-      const { data } = await client.from('events').select('*').eq('id', eventId).maybeSingle()
+      const { data } = unwrap(
+        await client.from('events').select('*').eq('id', eventId).maybeSingle(),
+      )
       return data ? toEvent(data) : null
     },
 
@@ -216,7 +237,8 @@ function toConference(row: any): Conference {
     venueName: row.venue_name,
     venueLat: row.venue_lat,
     venueLng: row.venue_lng,
-    nights: row.nights,
+    // Demo nights live in fixtures (Thu/Fri only). Remote seed can lag.
+    nights: fixtureConference.nights,
     topicTags: row.topic_tags,
   }
 }
@@ -250,6 +272,9 @@ function toEvent(row: any): OffsiteEvent {
     lat: row.lat,
     lng: row.lng,
     tags: row.tags ?? [],
+    // NULL means "no public audience" (official / attendee-hosted), which the
+    // UI renders as no line at all - distinct from a platform reporting zero.
+    externalGoingCount: row.external_going_count ?? undefined,
     isOfficial: row.is_official,
     curationStatus: row.curation_status,
     curationRationale: row.curation_rationale,

@@ -12,7 +12,9 @@ import { colors } from '../theme';
 export function MyEventScreen() {
   // Same persona the offsite map uses, so switching there follows here too.
   const viewer = attendeesById.get(useViewerId());
-  const reception = sessionGuide.find((s) => s.id === 'reception');
+  // "Now" is day 1 (Thu) mid-afternoon, so the next official thing is the
+  // sponsor happy hour at 5.
+  const upNext = sessionGuide.find((s) => s.id === 'happy-hour');
   const latest = updates[0];
 
   return (
@@ -82,7 +84,7 @@ export function MyEventScreen() {
           <div className="timeline-body">
             <div className="happening-now">Happening now</div>
             <div className="free-time-card">
-              <div className="time-range">2:15 PM – 5:15 PM (3 hours)</div>
+              <div className="time-range">2:15 PM – 5:00 PM (2h 45m)</div>
               <div className="free-time-title">You have free time</div>
               <button className="free-time-cta" onClick={openMap}>
                 <Icon path={mdiMapOutline} size={16} color={colors.green} />
@@ -92,26 +94,26 @@ export function MyEventScreen() {
           </div>
         </div>
 
-        {reception ? (
+        {upNext ? (
           <div className="timeline-row">
             <div className="timeline-col">
               <span className="timeline-dot timeline-dot-hollow" />
             </div>
             <div className="timeline-body">
-              <div className="happening-now happening-next">Up next · 6:00 PM</div>
+              <div className="happening-now happening-next">Up next · 5:00 PM</div>
               <button
                 className="session-card timeline-session"
                 onClick={() =>
-                  openOverlay({ kind: 'session', sessionId: reception.id })
+                  openOverlay({ kind: 'session', sessionId: upNext.id })
                 }
               >
                 <span className="session-top">
-                  <span className="session-time">{reception.time}</span>
+                  <span className="session-time">{upNext.time}</span>
                   <span className="official-badge">Official</span>
                 </span>
-                <span className="session-title">{reception.title}</span>
+                <span className="session-title">{upNext.title}</span>
                 <span className="session-meta-row">
-                  <span className="session-room">{reception.room}</span>
+                  <span className="session-room">{upNext.room}</span>
                 </span>
               </button>
             </div>

@@ -1,5 +1,5 @@
 import { mdiChevronRight, mdiMapOutline } from '@mdi/js';
-import heroBanner from '../assets/hero-banner.png';
+import heroBanner from '../assets/hero-banner.jpg';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { goToTab, openMap } from '../App';
 import { homeActions, sessionGuide } from '../data/mock';
@@ -28,7 +28,7 @@ export function HomeScreen() {
         showSearch
         center={
           <div className="brand-block">
-            <span className="brand-logo">demo</span>
+            <span className="brand-logo">hub</span>
             <span className="brand-event-title">Lonestar Tech Summit 2026</span>
           </div>
         }
@@ -36,14 +36,13 @@ export function HomeScreen() {
 
       <div className="screen-scroll home-content">
         <div className="hero-wrap">
-          <img src={heroBanner} alt="Conference main stage" className="hero-image" />
+          <img src={heroBanner} alt="Austin skyline at dusk" className="hero-image" />
           <span className="hero-shade" />
-          <span className="hero-rail" />
           <span className="live-pill">
             <span className="live-dot" />
             Day 1 · Live
           </span>
-          <span className="hero-date">Sep 15–18 · Austin, TX</span>
+          <span className="hero-date">Jul 30–31 · Austin, TX</span>
         </div>
 
         <div className="stat-row">
@@ -54,7 +53,7 @@ export function HomeScreen() {
             <strong>{sessionCount}</strong> sessions
           </span>
           <span className="stat-chip">
-            <strong>3</strong> nights out
+            <strong>2</strong> nights out
           </span>
         </div>
 

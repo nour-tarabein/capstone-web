@@ -20,7 +20,7 @@ import shotgunIcon from '../assets/sources/shotgun.png';
  * instant once at load and fall back to a fixed offset if it lied.
  */
 const CONFERENCE_ZONE = 'America/Chicago';
-/** Austin is UTC-5 during the September conference dates. */
+/** Austin is UTC-5 (CDT) during the conference dates. */
 const FALLBACK_OFFSET_MINUTES = -300;
 
 const intlHonoursTimeZone = (() => {
