@@ -119,14 +119,32 @@ export function MapScreen() {
     };
   }, [conference]);
 
-  const select = useCallback((eventId: string, open: boolean) => {
+  const select = useCallback((eventId: string, open: boolean, centerPin = false) => {
     setSelectedEventId(eventId);
     if (open) setOpenEventId(eventId);
+
+    if (centerPin) {
+      const map = mapRef.current;
+      const event = events.find((candidate) => candidate.id === eventId);
+      if (map && event) {
+        const size = map.getSize();
+        const pinPoint = map.latLngToContainerPoint([event.lat, event.lng]);
+        // The event sheet covers the lower half of the screen. Center the pin
+        // in the map area that remains visible between it and the top chrome.
+        const visibleMapCenter = L.point(size.x / 2, size.y * 0.32);
+        map.panBy(pinPoint.subtract(visibleMapCenter), {
+          animate: true,
+          duration: 0.35,
+          easeLinearity: 0.25,
+        });
+      }
+    }
+
     // Bring the matching strip card into view when a pin is tapped.
     stripRef.current
       ?.querySelector(`[data-event-id="${eventId}"]`)
       ?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, []);
+  }, [events]);
 
   // Event pins re-render on every data change; the map itself never remounts.
   // Include mapReady so the first events response isn't dropped if it lands
@@ -261,7 +279,7 @@ export function MapScreen() {
                     animationDelay: `${Math.min(i, 5) * 60}ms`,
                     ['--source-color' as string]: sourceColors[event.source],
                   }}
-                  onClick={() => select(event.id, true)}
+                  onClick={() => select(event.id, true, true)}
                 >
                   <span className="event-card-body">
                     <span className="event-head">

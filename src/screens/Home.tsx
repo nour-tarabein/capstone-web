@@ -28,7 +28,7 @@ export function HomeScreen() {
         showSearch
         center={
           <div className="brand-block">
-            <span className="brand-logo">hub</span>
+            <span className="brand-logo">Capstone Demo</span>
             <span className="brand-event-title">Lonestar Tech Summit 2026</span>
           </div>
         }
