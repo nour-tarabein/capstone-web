@@ -19,8 +19,8 @@ import { colors } from '../theme';
 /**
  * The web port of the app's single map. Mapbox-in-a-WebView becomes Leaflet
  * with CARTO's dark basemap — no access token to ship, which is what lets the
- * demo run on any audience phone straight from GitHub Pages. Nearby search is
- * the one mobile feature left out: it needs the Mapbox Search API.
+ * demo run on any audience phone straight from the deployed URL. Nearby search
+ * is the one mobile feature left out: it needs the Mapbox Search API.
  *
  * All chrome floats in glass layers over a full-bleed map; selection is
  * two-way (pin ↔ card) with the strip auto-scrolling to follow pin taps.
