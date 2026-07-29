@@ -31,3 +31,7 @@ The "Viewing as" control in More that lets the current browser preview the app a
 **Admin allowlist**:
 A hardcoded list of first+last name pairs, scoped to the Tysons Corner conference only. Checking in with a matching name automatically grants Organizer mode for that session — there is no manual toggle to turn it on or off. Austin is unaffected: it keeps `adminMode.ts`'s original manual, self-serve toggle, open to every viewer, exactly as today.
 _Avoid_: Admin flag, feature flag (the codebase already uses "Organizer mode" as the user-facing name for this capability).
+
+**Venue catalogue**:
+A hardcoded, pre-geocoded set of real venues offered on the hosting form for a given conference. Austin has its downtown set; Tysons Corner has a McLean-area set. Looked up by conference id (`venuesForConference`) — an unknown id yields an empty catalogue, never a silent fallback to another conference. Adding a venue is a one-line fixture edit. No geocoding API, autocomplete token, or network call is involved.
+_Avoid_: Venue list, Mapbox search, free-text venue.
