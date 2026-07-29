@@ -1,0 +1,7 @@
+# Both conferences run live via Supabase; no fixture-only fallback for conference data
+
+We're adding a second Conference (Tysons Corner) whose whole point is a live, shared, multi-device roster: real check-ins and RSVPs need to be visible across ~50-60 phones in the room in real time. Rather than give Tysons Corner its own live path while Austin keeps its existing fixture-backed "demo-day insurance policy" (as documented in `supabaseRepository.ts` and `.env.example`), we decided both conferences run against the live Supabase backend, full stop — including the attendee roster and People/Attendees/Search screens across the app, which today read the static fixture directly regardless of backend mode.
+
+This is a deliberate departure from the existing design intent (the mock repository exists specifically so a live demo survives a bad venue wifi connection) and from the "aggregate counts are live via RPC/polling, but the roster itself is always the static fixture" split that holds everywhere in the code today. We accepted the added live-demo risk (a Supabase outage now affects both conferences, not just the new one) in exchange for one repository code path instead of two, and for genuine live-roster behavior everywhere instead of only on RSVP counts.
+
+Austin's existing fixture data is seeded into Supabase via an extended version of `scripts/gen-seed-events.ts` (which already knows how to turn fixtures into SQL inserts) rather than hand-written.
