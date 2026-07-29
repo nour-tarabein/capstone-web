@@ -58,7 +58,7 @@ function HostForm({
     setBusy(true);
     try {
       const venue = VENUES[venueIndex];
-      await repository.submitEvent({
+      await repository.submitEvent(conference.id, {
         title,
         description,
         startsAt: conferenceIso(night, time),

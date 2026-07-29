@@ -13,13 +13,20 @@ import type { Repository } from './repository'
 import { getViewerId } from '../persona'
 import { sessionTitles } from '../fixtures/sessions'
 import { attendeesById } from '../fixtures/attendees'
-import { conference as fixtureConference } from '../fixtures/conference'
+import { conference as fixtureConference, conferencesById } from '../fixtures/conference'
 import { supabaseAnonKey, supabaseUrl } from './env'
 
 /**
  * Live repository. Events and the roster are pre-seeded rows (no third-party
  * API risk on demo day); RSVPs are genuinely live and multi-device, which is
  * what makes the two-phone moment possible (DESIGN.md #11).
+ *
+ * Every method takes a conference id and scopes its query to it — a `.eq(
+ * 'conference_id', ...)` filter on direct table reads, a `p_conference_id`
+ * argument on the RPC-backed reads/writes — so two conferences never leak
+ * into each other's results (issue #3). The RPCs enforce this server-side in
+ * supabase/schema.sql; the filters here are a second, client-side line of the
+ * same guarantee.
  *
  * The reciprocity gate is NOT enforced here — it is enforced in Postgres, by
  * the attending_list() function in supabase/schema.sql. This client cannot
@@ -34,27 +41,29 @@ export function createSupabaseRepository(): Repository {
   })
 
   return {
-    async getConference(): Promise<Conference> {
-      const { data } = await client.from('conferences').select('*').single()
-      return toConference(data)
+    async getConference(conferenceId: string): Promise<Conference> {
+      const { data } = await client.from('conferences').select('*').eq('id', conferenceId).single()
+      return toConference(data, conferenceId)
     },
 
-    async getViewer(): Promise<Attendee> {
+    async getViewer(conferenceId: string): Promise<Attendee> {
       const id = getViewerId()
       const { data, error } = await client
         .from('attendees')
         .select('*')
         .eq('id', id)
+        .eq('conference_id', conferenceId)
         .maybeSingle()
       if (data && !error) return toAttendee(data)
       // Roster can lag fixtures after a local rewrite — prefer the fixture so
-      // the UI never shows a retired fictional name (Maya / Priya).
-      const local = attendeesById.get(id)
+      // the UI never shows a retired fictional name (Maya / Priya). Only
+      // applies to the conference the local fixtures actually describe.
+      const local = conferenceId === fixtureConference.id ? attendeesById.get(id) : undefined
       if (local) return local
-      throw error ?? new Error(`Viewer ${id} not found`)
+      throw error ?? new Error(`Viewer ${id} not found in conference ${conferenceId}`)
     },
 
-    async listEventsForNight(night: string): Promise<OffsiteEvent[]> {
+    async listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]> {
       // unwrap, not a bare destructure: without it a failed query returns null
       // and the map silently renders an empty night, which is indistinguishable
       // from "no events tonight" and sends you hunting in the wrong place.
@@ -62,6 +71,7 @@ export function createSupabaseRepository(): Repository {
         await client
           .from('events')
           .select('*')
+          .eq('conference_id', conferenceId)
           .eq('curation_status', 'approved')
           .gte('starts_at', `${night}T00:00:00-05:00`)
           .lte('starts_at', `${night}T23:59:59-05:00`)
@@ -76,29 +86,50 @@ export function createSupabaseRepository(): Repository {
       return (data ?? []).map(toEvent)
     },
 
-    async getEvent(eventId: string): Promise<OffsiteEvent | null> {
+    async getEvent(conferenceId: string, eventId: string): Promise<OffsiteEvent | null> {
       const { data } = unwrap(
-        await client.from('events').select('*').eq('id', eventId).maybeSingle(),
+        await client
+          .from('events')
+          .select('*')
+          .eq('id', eventId)
+          .eq('conference_id', conferenceId)
+          .maybeSingle(),
       )
       return data ? toEvent(data) : null
     },
 
-    async getGoingCounts(eventIds: string[]): Promise<Record<string, number>> {
-      const { data } = unwrap(await client.rpc('going_counts', { p_event_ids: eventIds }))
+    async getGoingCounts(
+      conferenceId: string,
+      eventIds: string[],
+    ): Promise<Record<string, number>> {
+      const { data } = unwrap(
+        await client.rpc('going_counts', {
+          p_conference_id: conferenceId,
+          p_event_ids: eventIds,
+        }),
+      )
       const counts = Object.fromEntries(eventIds.map((id) => [id, 0]))
       for (const row of data ?? []) counts[row.event_id] = Number(row.going_count)
       return counts
     },
 
-    async getAttendingList(eventId: string, viewerId: string): Promise<AttendingList> {
+    async getAttendingList(
+      conferenceId: string,
+      eventId: string,
+      viewerId: string,
+    ): Promise<AttendingList> {
       const { data } = unwrap(
-        await client.rpc('attending_list', { p_event_id: eventId, p_viewer_id: viewerId }),
+        await client.rpc('attending_list', {
+          p_conference_id: conferenceId,
+          p_event_id: eventId,
+          p_viewer_id: viewerId,
+        }),
       )
 
       if (!data || data.gated) return { gated: true, goingCount: data?.going_count ?? 0 }
 
       const people = (data.people ?? []).map(toAttendee)
-      const viewer = await this.getViewer()
+      const viewer = await this.getViewer(conferenceId)
 
       return {
         gated: false,
@@ -111,9 +142,15 @@ export function createSupabaseRepository(): Repository {
     // Writes go through RPC, not the table. PostgREST returns the written row
     // by default, which would require SELECT on rsvps — and granting that
     // reopens the reverse lookup (DESIGN.md #9).
-    async rsvp(eventId: string, attendeeId: string, anonymous: boolean): Promise<void> {
+    async rsvp(
+      conferenceId: string,
+      eventId: string,
+      attendeeId: string,
+      anonymous: boolean,
+    ): Promise<void> {
       unwrap(
         await client.rpc('rsvp_create', {
+          p_conference_id: conferenceId,
           p_event_id: eventId,
           p_attendee_id: attendeeId,
           p_anonymous: anonymous,
@@ -121,9 +158,13 @@ export function createSupabaseRepository(): Repository {
       )
     },
 
-    async cancelRsvp(eventId: string, attendeeId: string): Promise<void> {
+    async cancelRsvp(conferenceId: string, eventId: string, attendeeId: string): Promise<void> {
       unwrap(
-        await client.rpc('rsvp_cancel', { p_event_id: eventId, p_attendee_id: attendeeId }),
+        await client.rpc('rsvp_cancel', {
+          p_conference_id: conferenceId,
+          p_event_id: eventId,
+          p_attendee_id: attendeeId,
+        }),
       )
     },
 
@@ -144,14 +185,17 @@ export function createSupabaseRepository(): Repository {
      * rsvps that calls realtime.broadcast_changes() with event_id only — no
      * attendee identity — and subscribe to that channel instead.
      */
-    subscribeToEvent(eventId: string, onChange: () => void): () => void {
+    subscribeToEvent(conferenceId: string, eventId: string, onChange: () => void): () => void {
       let lastCount: number | null = null
       let stopped = false
 
       const tick = async () => {
         if (stopped) return
         try {
-          const { data } = await client.rpc('going_counts', { p_event_ids: [eventId] })
+          const { data } = await client.rpc('going_counts', {
+            p_conference_id: conferenceId,
+            p_event_ids: [eventId],
+          })
           const count = Number(data?.[0]?.going_count ?? 0)
           if (lastCount !== null && count !== lastCount) onChange()
           lastCount = count
@@ -169,8 +213,12 @@ export function createSupabaseRepository(): Repository {
       }
     },
 
-    async listCurationCandidates(): Promise<OffsiteEvent[]> {
-      const { data } = await client.from('events').select('*').eq('is_official', false)
+    async listCurationCandidates(conferenceId: string): Promise<OffsiteEvent[]> {
+      const { data } = await client
+        .from('events')
+        .select('*')
+        .eq('conference_id', conferenceId)
+        .eq('is_official', false)
       return (data ?? []).map(toEvent)
     },
 
@@ -178,9 +226,10 @@ export function createSupabaseRepository(): Repository {
     // anon has no write access to events, and the events_read policy only
     // exposes approved rows — so PostgREST could not return the written row
     // even if it were allowed to write it.
-    async submitEvent(draft: EventDraft): Promise<void> {
+    async submitEvent(conferenceId: string, draft: EventDraft): Promise<void> {
       unwrap(
         await client.rpc('event_submit', {
+          p_conference_id: conferenceId,
           p_title: draft.title,
           p_description: draft.description,
           p_starts_at: draft.startsAt,
@@ -197,8 +246,10 @@ export function createSupabaseRepository(): Repository {
      * are exactly the rows events_read hides — that policy is what makes the
      * approval gate real, so the queue is a SECURITY DEFINER function instead.
      */
-    async listPendingEvents(): Promise<PendingEvent[]> {
-      const { data } = unwrap(await client.rpc('pending_events'))
+    async listPendingEvents(conferenceId: string): Promise<PendingEvent[]> {
+      const { data } = unwrap(
+        await client.rpc('pending_events', { p_conference_id: conferenceId }),
+      )
       return (data ?? []).map((row: any) => ({
         ...toEvent(row),
         submittedByName: row.submitted_by_name ?? null,
@@ -207,10 +258,17 @@ export function createSupabaseRepository(): Repository {
     },
 
     async reviewEvent(
+      conferenceId: string,
       eventId: string,
       status: Extract<CurationStatus, 'approved' | 'rejected'>,
     ): Promise<void> {
-      unwrap(await client.rpc('event_review', { p_event_id: eventId, p_status: status }))
+      unwrap(
+        await client.rpc('event_review', {
+          p_conference_id: conferenceId,
+          p_event_id: eventId,
+          p_status: status,
+        }),
+      )
     },
   }
 }
@@ -229,7 +287,7 @@ function unwrap<T extends { error: unknown }>(result: T): T {
 /* Postgres is snake_case, the domain is camelCase. Map explicitly — casting a
  * raw row to the domain type compiles and then silently yields undefined. */
 
-function toConference(row: any): Conference {
+function toConference(row: any, conferenceId: string): Conference {
   return {
     id: row.id,
     name: row.name,
@@ -237,8 +295,8 @@ function toConference(row: any): Conference {
     venueName: row.venue_name,
     venueLat: row.venue_lat,
     venueLng: row.venue_lng,
-    // Demo nights live in fixtures (Thu/Fri only). Remote seed can lag.
-    nights: fixtureConference.nights,
+    // Demo nights live in fixtures, keyed by conference id. Remote seed can lag.
+    nights: conferencesById.get(conferenceId)?.nights ?? fixtureConference.nights,
     topicTags: row.topic_tags,
   }
 }

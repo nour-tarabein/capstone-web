@@ -14,6 +14,10 @@
 -- That is what makes "you can't see who's going until you RSVP" a real gate
 -- rather than a client-side suggestion an audience member could bypass.
 --
+-- Every function additionally takes a conference id and scopes its query to
+-- it, so a client-supplied conference id can never read or write across
+-- conferences (issue #3).
+--
 -- Seed data is generated from src/offsite/fixtures via scripts/gen-seed-events.ts.
 -- Thursday is one approved event per source; Friday stays denser.
 
@@ -137,21 +141,26 @@ revoke all on rsvps from anon, authenticated;
 -- ============================================================
 
 -- Aggregate pin badges. Deliberately separate from attending_list so the map
--- can show "14 going" without any identity crossing the boundary.
-create or replace function going_counts(p_event_ids text[])
+-- can show "14 going" without any identity crossing the boundary. Joined to
+-- events so a p_conference_id from one conference can never count RSVPs that
+-- belong to another (issue #3).
+create or replace function going_counts(p_conference_id text, p_event_ids text[])
 returns table (event_id text, going_count bigint)
 language sql security definer set search_path = public
 as $$
-  select event_id, count(*)::bigint
-  from rsvps
-  where event_id = any(p_event_ids)
-  group by event_id;
+  select r.event_id, count(*)::bigint
+  from rsvps r
+  join events e on e.id = r.event_id
+  where r.event_id = any(p_event_ids) and e.conference_id = p_conference_id
+  group by r.event_id;
 $$;
 
 -- The reciprocity gate. Returns a count-only payload unless the viewer has
 -- RSVP'd to this event themselves; only then are names returned, and only for
--- people who are non-anonymous, not the viewer, and directory-opted-in.
-create or replace function attending_list(p_event_id text, p_viewer_id text)
+-- people who are non-anonymous, not the viewer, and directory-opted-in. Every
+-- query is joined to events on p_conference_id, so an event id from a
+-- different conference is invisible here too.
+create or replace function attending_list(p_conference_id text, p_event_id text, p_viewer_id text)
 returns json
 language plpgsql security definer set search_path = public
 as $$
@@ -161,10 +170,16 @@ declare
   v_people json;
   v_nameable int;
 begin
-  select count(*) into v_going_count from rsvps where event_id = p_event_id;
+  select count(*) into v_going_count
+  from rsvps r
+  join events e on e.id = r.event_id
+  where r.event_id = p_event_id and e.conference_id = p_conference_id;
 
   select exists (
-    select 1 from rsvps where event_id = p_event_id and attendee_id = p_viewer_id
+    select 1
+    from rsvps r
+    join events e on e.id = r.event_id
+    where r.event_id = p_event_id and e.conference_id = p_conference_id and r.attendee_id = p_viewer_id
   ) into v_viewer_going;
 
   if not v_viewer_going then
@@ -174,8 +189,10 @@ begin
   select coalesce(json_agg(to_jsonb(a.*)), '[]'::json), count(*)
   into v_people, v_nameable
   from rsvps r
+  join events e on e.id = r.event_id
   join attendees a on a.id = r.attendee_id
   where r.event_id = p_event_id
+    and e.conference_id = p_conference_id
     and r.anonymous = false
     and r.attendee_id <> p_viewer_id
     and a.directory_opt_in = true;
@@ -192,26 +209,39 @@ $$;
 
 -- Writes go through RPC, never the table: returning the written row would need
 -- SELECT on rsvps, and granting that reopens the reverse lookup (DESIGN.md #9).
-create or replace function rsvp_create(p_event_id text, p_attendee_id text, p_anonymous boolean)
+-- A no-op if the event does not belong to p_conference_id — the client cannot
+-- RSVP into a conference it did not ask for.
+create or replace function rsvp_create(p_conference_id text, p_event_id text, p_attendee_id text, p_anonymous boolean)
 returns void
-language sql security definer set search_path = public
+language plpgsql security definer set search_path = public
 as $$
+begin
+  if not exists (select 1 from events where id = p_event_id and conference_id = p_conference_id) then
+    return;
+  end if;
   insert into rsvps (event_id, attendee_id, anonymous)
   values (p_event_id, p_attendee_id, coalesce(p_anonymous, false))
   on conflict (event_id, attendee_id) do nothing;
+end;
 $$;
 
-create or replace function rsvp_cancel(p_event_id text, p_attendee_id text)
+create or replace function rsvp_cancel(p_conference_id text, p_event_id text, p_attendee_id text)
 returns void
 language sql security definer set search_path = public
 as $$
-  delete from rsvps where event_id = p_event_id and attendee_id = p_attendee_id;
+  delete from rsvps
+  where event_id = p_event_id
+    and attendee_id = p_attendee_id
+    and event_id in (select id from events where conference_id = p_conference_id);
 $$;
 
 -- An attendee proposes an event. Everything the organizer controls — id, source,
 -- curation status — is assigned here, so the client cannot submit something
 -- pre-approved. It lands as a candidate, invisible to the map until reviewed.
+-- p_conference_id must match the attendee's own conference — an attendee from
+-- one conference cannot submit an event into another.
 create or replace function event_submit(
+  p_conference_id text,
   p_title text, p_description text, p_starts_at timestamptz,
   p_venue_name text, p_lat double precision, p_lng double precision,
   p_attendee_id text
@@ -222,6 +252,9 @@ declare
   v_conf text;
 begin
   select conference_id into v_conf from attendees where id = p_attendee_id;
+  if v_conf is null or v_conf <> p_conference_id then
+    raise exception 'attendee % does not belong to conference %', p_attendee_id, p_conference_id;
+  end if;
   insert into events (
     id, conference_id, source, source_event_id, source_url,
     title, description, starts_at, ends_at, venue_name, lat, lng,
@@ -238,8 +271,9 @@ $$;
 
 -- The organizer review queue cannot be a plain SELECT: the rows it needs are
 -- exactly the ones events_read hides. SECURITY DEFINER, joined to the submitter
--- so the queue can name the host without a second round trip.
-create or replace function pending_events()
+-- so the queue can name the host without a second round trip. Scoped to one
+-- conference so an organizer viewing one conference never reviews another's.
+create or replace function pending_events(p_conference_id text)
 returns setof jsonb
 language sql security definer set search_path = public
 as $$
@@ -250,34 +284,35 @@ as $$
             )
   from events e
   left join attendees a on a.id = e.submitted_by
-  where e.curation_status = 'candidate'
+  where e.curation_status = 'candidate' and e.conference_id = p_conference_id
   order by e.starts_at;
 $$;
 
 -- Approve or reject a candidate. Approving is what puts it on the map.
-create or replace function event_review(p_event_id text, p_status text)
+create or replace function event_review(p_conference_id text, p_event_id text, p_status text)
 returns void
 language sql security definer set search_path = public
 as $$
   update events set curation_status = p_status
-  where id = p_event_id and p_status in ('approved','rejected');
+  where id = p_event_id and conference_id = p_conference_id and p_status in ('approved','rejected');
 $$;
 
 -- anon drives the whole app through these.
-grant execute on function going_counts(text[])                                                          to anon, authenticated;
-grant execute on function attending_list(text, text)                                                    to anon, authenticated;
-grant execute on function rsvp_create(text, text, boolean)                                              to anon, authenticated;
-grant execute on function rsvp_cancel(text, text)                                                       to anon, authenticated;
-grant execute on function event_submit(text, text, timestamptz, text, double precision, double precision, text) to anon, authenticated;
-grant execute on function pending_events()                                                              to anon, authenticated;
-grant execute on function event_review(text, text)                                                      to anon, authenticated;
+grant execute on function going_counts(text, text[])                                                          to anon, authenticated;
+grant execute on function attending_list(text, text, text)                                                    to anon, authenticated;
+grant execute on function rsvp_create(text, text, text, boolean)                                               to anon, authenticated;
+grant execute on function rsvp_cancel(text, text, text)                                                        to anon, authenticated;
+grant execute on function event_submit(text, text, text, timestamptz, text, double precision, double precision, text) to anon, authenticated;
+grant execute on function pending_events(text)                                                                 to anon, authenticated;
+grant execute on function event_review(text, text, text)                                                       to anon, authenticated;
 
 -- ============================================================
 -- SEED DATA  (generated from src/offsite/fixtures — do not edit by hand)
 -- ============================================================
 
 insert into conferences (id, name, city, venue_name, venue_lat, venue_lng, nights, topic_tags) values
-  ('lts-2026', 'Lonestar Tech Summit 2026', 'Austin, TX', 'Austin Convention Center', 30.2637, -97.7397, ARRAY['2026-07-30','2026-07-31']::text[], ARRAY['AI','FinTech','DevTools','Design','Climate']::text[]);
+  ('lts-2026', 'Lonestar Tech Summit 2026', 'Austin, TX', 'Austin Convention Center', 30.2637, -97.7397, ARRAY['2026-07-30','2026-07-31']::text[], ARRAY['AI','FinTech','DevTools','Design','Climate']::text[]),
+  ('lts-tysons-2026', 'Lonestar Tech Summit 2026', 'McLean, VA', '1765 Greensboro Station Pl, 7th Floor', 38.9196, -77.2264, ARRAY['2026-07-30']::text[], ARRAY['AI','FinTech','DevTools','Design','Climate']::text[]);
 
 insert into attendees (id, conference_id, name, title, company, photo_url, interests, session_ids, directory_opt_in) values
   ('a1', 'lts-2026', 'Reggie Aggarwal', 'CEO', 'Finance', '', ARRAY['FinTech','AI']::text[], ARRAY['s1','s4']::text[], true),
@@ -342,7 +377,13 @@ insert into attendees (id, conference_id, name, title, company, photo_url, inter
   ('a60', 'lts-2026', 'Quinn Savitt', 'Software Engineer Intern', 'Technology', '', ARRAY['AI','DevTools']::text[], ARRAY['s3','s9']::text[], true),
   ('a61', 'lts-2026', 'Sherry Chen', 'Product Design Intern', 'Technology', '', ARRAY['Design']::text[], ARRAY['s2','s7']::text[], true),
   ('a62', 'lts-2026', 'Shritan Goki', 'Software Engineering Intern', 'Technology', '', ARRAY['DevTools','AI']::text[], ARRAY['s1','s5']::text[], true),
-  ('a63', 'lts-2026', 'Zaylie Tamashiro', 'Software Engineering Intern', 'Technology', '', ARRAY['DevTools']::text[], ARRAY['s3','s5']::text[], true);
+  ('a63', 'lts-2026', 'Zaylie Tamashiro', 'Software Engineering Intern', 'Technology', '', ARRAY['DevTools']::text[], ARRAY['s3','s5']::text[], true),
+  ('t1', 'lts-tysons-2026', 'Placeholder Attendee One', 'Organizer', 'Operations', '', ARRAY['AI','FinTech']::text[], ARRAY['s1']::text[], true),
+  ('t2', 'lts-tysons-2026', 'Placeholder Attendee Two', 'Engineer', 'Technology', '', ARRAY['DevTools','AI']::text[], ARRAY['s3']::text[], true),
+  ('t3', 'lts-tysons-2026', 'Placeholder Attendee Three', 'Designer', 'Design', '', ARRAY['Design']::text[], ARRAY['s2']::text[], true),
+  ('t4', 'lts-tysons-2026', 'Placeholder Attendee Four', 'Analyst', 'Finance', '', ARRAY['FinTech']::text[], ARRAY['s4']::text[], true),
+  ('t5', 'lts-tysons-2026', 'Placeholder Attendee Five', 'Engineer', 'Technology', '', ARRAY['DevTools']::text[], ARRAY['s3']::text[], true),
+  ('t6', 'lts-tysons-2026', 'Placeholder Attendee Six', 'Coordinator', 'Marketing', '', ARRAY['Design','Climate']::text[], ARRAY['s6']::text[], true);
 
 insert into events (id, conference_id, source, source_event_id, source_url, title, description, starts_at, ends_at, venue_name, lat, lng, tags, external_going_count, is_official, curation_status, curation_rationale, submitted_by) values
   ('official:lts-opening-reception', 'lts-2026', 'official', 'lts-opening-reception', '#', 'Summit Opening Reception', 'Drinks and small plates on the terrace. Badge required.', '2026-07-30T18:00:00-05:00'::timestamptz, '2026-07-30T21:00:00-05:00'::timestamptz, 'Austin Convention Center - Terrace', 30.2637, -97.7397, ARRAY['AI','FinTech','DevTools','Design','Climate']::text[], NULL, true, 'approved', 'matches AI, FinTech, DevTools, Design, Climate · 0.0 mi from venue', NULL),
@@ -372,7 +413,12 @@ insert into events (id, conference_id, source, source_event_id, source_url, titl
   ('attendee:host-tech-meetup-hh', 'lts-2026', 'attendee', 'host-tech-meetup-hh', '', 'Tech Meetup Happy Hour', 'The engineering side of the summit, on a patio, before the parties start. Interns very much included.', '2026-07-31T17:30:00-05:00'::timestamptz, '2026-07-31T20:00:00-05:00'::timestamptz, 'Easy Tiger', 30.2679, -97.7392, ARRAY['DevTools','AI']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 'a6'),
   ('attendee:sub-boardgames', 'lts-2026', 'attendee', 'sub-boardgames', '', 'Board games + beer', 'Grabbing the back room at Emerald Tavern. Bringing Wingspan and Azul, all welcome.', '2026-07-30T20:00:00-05:00'::timestamptz, '2026-07-30T23:00:00-05:00'::timestamptz, 'Emerald Tavern Games & Cafe', 30.2711, -97.7437, ARRAY['DevTools']::text[], NULL, false, 'candidate', 'Submitted by an attendee', 'a2'),
   ('attendee:sub-morningrun', 'lts-2026', 'attendee', 'sub-morningrun', '', 'Sunrise run along the trail', 'Easy 3 miles before the keynote. Meeting at the boardwalk entrance.', '2026-07-31T06:30:00-05:00'::timestamptz, '2026-07-31T07:30:00-05:00'::timestamptz, 'Ann and Roy Butler Trail', 30.2523, -97.7411, ARRAY[]::text[], NULL, false, 'candidate', 'Submitted by an attendee', 'a47'),
-  ('eventbrite:eb-5k', 'lts-2026', 'eventbrite', 'eb-5k', 'https://www.eventbrite.com/e/lady-bird-5k', 'Lady Bird Lake 5K', 'Charity fun run around the trail.', '2026-07-30T07:00:00-05:00'::timestamptz, '2026-07-30T09:00:00-05:00'::timestamptz, 'Auditorium Shores', 30.2622, -97.7515, ARRAY[]::text[], 340, false, 'rejected', 'no tag match · morning slot · not a networking context', NULL);
+  ('eventbrite:eb-5k', 'lts-2026', 'eventbrite', 'eb-5k', 'https://www.eventbrite.com/e/lady-bird-5k', 'Lady Bird Lake 5K', 'Charity fun run around the trail.', '2026-07-30T07:00:00-05:00'::timestamptz, '2026-07-30T09:00:00-05:00'::timestamptz, 'Auditorium Shores', 30.2622, -97.7515, ARRAY[]::text[], 340, false, 'rejected', 'no tag match · morning slot · not a networking context', NULL),
+  ('official:tys-opening-reception', 'lts-tysons-2026', 'official', 'tys-opening-reception', '#', 'Tysons Opening Reception', 'Placeholder opening reception for the Tysons Corner conference.', '2026-07-30T18:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, '1765 Greensboro Station Pl - Lobby', 38.9196, -77.2264, ARRAY['AI','FinTech','DevTools','Design','Climate']::text[], NULL, true, 'approved', 'matches AI, FinTech, DevTools, Design, Climate · 0.0 mi from venue', NULL),
+  ('eventbrite:tys-eb-placeholder-mixer', 'lts-tysons-2026', 'eventbrite', 'tys-eb-placeholder-mixer', 'https://www.eventbrite.com/e/placeholder-tysons-mixer', 'Placeholder Tysons Mixer', 'Placeholder third-party event for the Tysons Corner fixture.', '2026-07-30T18:30:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, 'Placeholder Venue A', 38.9204, -77.2277, ARRAY['DevTools']::text[], 40, false, 'approved', 'matches DevTools · 0.1 mi from venue', NULL),
+  ('attendee:tys-host-placeholder-meetup', 'lts-tysons-2026', 'attendee', 'tys-host-placeholder-meetup', '', 'Placeholder Hosted Meetup', 'Placeholder attendee-hosted event for the Tysons Corner fixture.', '2026-07-30T19:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, 'Placeholder Venue B', 38.919, -77.2255, ARRAY['AI']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't2'),
+  ('attendee:tys-sub-placeholder-walk', 'lts-tysons-2026', 'attendee', 'tys-sub-placeholder-walk', '', 'Placeholder Sunrise Walk', 'Placeholder attendee submission awaiting review.', '2026-07-30T07:00:00-04:00'::timestamptz, '2026-07-30T08:00:00-04:00'::timestamptz, 'Placeholder Trailhead', 38.9182, -77.2249, ARRAY[]::text[], NULL, false, 'candidate', 'Submitted by an attendee', 't4'),
+  ('eventbrite:tys-eb-rejected-placeholder', 'lts-tysons-2026', 'eventbrite', 'tys-eb-rejected-placeholder', 'https://www.eventbrite.com/e/placeholder-rejected', 'Placeholder Rejected Run', 'Placeholder rejected candidate for the Tysons Corner fixture.', '2026-07-30T07:30:00-04:00'::timestamptz, '2026-07-30T08:30:00-04:00'::timestamptz, 'Placeholder Trail', 38.9161, -77.2231, ARRAY[]::text[], 12, false, 'rejected', 'no tag match · morning slot · not a networking context', NULL);
 
 insert into rsvps (event_id, attendee_id, anonymous) values
   ('official:lts-opening-reception', 'a2', false), ('official:lts-opening-reception', 'a3', false), ('official:lts-opening-reception', 'a4', false), ('official:lts-opening-reception', 'a5', false), ('official:lts-opening-reception', 'a6', false), ('official:lts-opening-reception', 'a8', false), ('official:lts-opening-reception', 'a14', false), ('official:lts-opening-reception', 'a16', false), ('official:lts-opening-reception', 'a20', false), ('official:lts-opening-reception', 'a39', false), ('official:lts-opening-reception', 'a45', false), ('official:lts-opening-reception', 'a54', false), ('official:lts-opening-reception', 'a57', false), ('official:lts-opening-reception', 'a61', false), ('official:lts-opening-reception', 'a9', true),
@@ -399,4 +445,7 @@ insert into rsvps (event_id, attendee_id, anonymous) values
   ('luma:luma-stripe-payments-eng', 'a1', false), ('luma:luma-stripe-payments-eng', 'a5', false), ('luma:luma-stripe-payments-eng', 'a8', false), ('luma:luma-stripe-payments-eng', 'a14', false), ('luma:luma-stripe-payments-eng', 'a15', false), ('luma:luma-stripe-payments-eng', 'a17', false), ('luma:luma-stripe-payments-eng', 'a20', false), ('luma:luma-stripe-payments-eng', 'a23', false), ('luma:luma-stripe-payments-eng', 'a39', false), ('luma:luma-stripe-payments-eng', 'a11', false),
   ('luma:luma-nvidia-inference', 'a2', false), ('luma:luma-nvidia-inference', 'a45', false), ('luma:luma-nvidia-inference', 'a50', false), ('luma:luma-nvidia-inference', 'a52', false), ('luma:luma-nvidia-inference', 'a54', false), ('luma:luma-nvidia-inference', 'a58', false), ('luma:luma-nvidia-inference', 'a60', false), ('luma:luma-nvidia-inference', 'a62', false), ('luma:luma-nvidia-inference', 'a16', false), ('luma:luma-nvidia-inference', 'a53', false),
   ('luma:luma-datadog-observability', 'a6', false), ('luma:luma-datadog-observability', 'a7', false), ('luma:luma-datadog-observability', 'a18', false), ('luma:luma-datadog-observability', 'a46', false), ('luma:luma-datadog-observability', 'a48', false), ('luma:luma-datadog-observability', 'a49', false), ('luma:luma-datadog-observability', 'a51', false), ('luma:luma-datadog-observability', 'a55', false), ('luma:luma-datadog-observability', 'a59', false),
-  ('luma:luma-github-open-source', 'a2', false), ('luma:luma-github-open-source', 'a45', false), ('luma:luma-github-open-source', 'a46', false), ('luma:luma-github-open-source', 'a50', false), ('luma:luma-github-open-source', 'a51', false), ('luma:luma-github-open-source', 'a53', false), ('luma:luma-github-open-source', 'a58', false), ('luma:luma-github-open-source', 'a60', false), ('luma:luma-github-open-source', 'a62', false), ('luma:luma-github-open-source', 'a63', false), ('luma:luma-github-open-source', 'a55', false);
+  ('luma:luma-github-open-source', 'a2', false), ('luma:luma-github-open-source', 'a45', false), ('luma:luma-github-open-source', 'a46', false), ('luma:luma-github-open-source', 'a50', false), ('luma:luma-github-open-source', 'a51', false), ('luma:luma-github-open-source', 'a53', false), ('luma:luma-github-open-source', 'a58', false), ('luma:luma-github-open-source', 'a60', false), ('luma:luma-github-open-source', 'a62', false), ('luma:luma-github-open-source', 'a63', false), ('luma:luma-github-open-source', 'a55', false),
+  ('official:tys-opening-reception', 't1', false), ('official:tys-opening-reception', 't2', false), ('official:tys-opening-reception', 't3', false), ('official:tys-opening-reception', 't5', true),
+  ('eventbrite:tys-eb-placeholder-mixer', 't2', false), ('eventbrite:tys-eb-placeholder-mixer', 't4', false),
+  ('attendee:tys-host-placeholder-meetup', 't1', false), ('attendee:tys-host-placeholder-meetup', 't2', false), ('attendee:tys-host-placeholder-meetup', 't6', false);

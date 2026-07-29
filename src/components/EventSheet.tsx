@@ -34,17 +34,17 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
 
   const refresh = useCallback(async () => {
     const [e, a] = await Promise.all([
-      repository.getEvent(eventId),
-      repository.getAttendingList(eventId, viewer.id),
+      repository.getEvent(conference.id, eventId),
+      repository.getAttendingList(conference.id, eventId, viewer.id),
     ]);
     setEvent(e);
     setAttending(a);
-  }, [eventId, viewer.id]);
+  }, [conference.id, eventId, viewer.id]);
 
   useEffect(() => {
     void refresh();
-    return repository.subscribeToEvent(eventId, () => void refresh());
-  }, [eventId, refresh]);
+    return repository.subscribeToEvent(conference.id, eventId, () => void refresh());
+  }, [conference.id, eventId, refresh]);
 
   const going = attending ? !attending.gated : false;
 
@@ -53,9 +53,9 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
     setBusy(true);
     try {
       if (going) {
-        await repository.cancelRsvp(eventId, viewer.id);
+        await repository.cancelRsvp(conference.id, eventId, viewer.id);
       } else {
-        await repository.rsvp(eventId, viewer.id, anonymous);
+        await repository.rsvp(conference.id, eventId, viewer.id, anonymous);
         // The payoff moment: the gate lifts and the room appears.
         setBurstKey((k) => k + 1);
       }
