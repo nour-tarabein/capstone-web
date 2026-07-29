@@ -84,7 +84,7 @@ describe('checkin', () => {
       department: 'Technology',
     })
 
-    expect(getAdminMode()).toBe(true)
+    expect(getAdminMode(tysonsConference.id)).toBe(true)
   })
 
   it('leaves organizer mode off when the checked-in name is not on the admin allowlist', async () => {
@@ -97,7 +97,7 @@ describe('checkin', () => {
       department: 'Technology',
     })
 
-    expect(getAdminMode()).toBe(false)
+    expect(getAdminMode(tysonsConference.id)).toBe(false)
   })
 
   it('keeps check-ins for different conferences independent', async () => {
