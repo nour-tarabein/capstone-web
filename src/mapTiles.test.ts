@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   CARTO_DARK_TILE_URL,
   CARTO_SUBDOMAINS,
+  MAP_DEFAULT_ZOOM,
+  PREVIEW_CARD_HEIGHT,
+  PREVIEW_CARD_WIDTH,
   TILE_SIZE,
   buildTileMosaic,
   tileIndexFor,
@@ -37,6 +40,10 @@ describe('tileIndexFor', () => {
   });
 
   it('maps the Austin venue to its known tile', () => {
+    expect(tileIndexFor(conference.venueLat, conference.venueLng, 14)).toEqual({
+      x: 3743,
+      y: 6745,
+    });
     expect(tileIndexFor(conference.venueLat, conference.venueLng, 15)).toEqual({
       x: 7487,
       y: 13491,
@@ -44,6 +51,10 @@ describe('tileIndexFor', () => {
   });
 
   it('maps the McLean venue to its known tile', () => {
+    expect(tileIndexFor(tysonsConference.venueLat, tysonsConference.venueLng, 14)).toEqual({
+      x: 4677,
+      y: 6266,
+    });
     expect(tileIndexFor(tysonsConference.venueLat, tysonsConference.venueLng, 15)).toEqual({
       x: 9354,
       y: 12532,
@@ -61,8 +72,12 @@ describe('tileIndexFor', () => {
   });
 
   it('gives the two conferences different tiles, so each card shows its own venue', () => {
-    const austin = tileIndexFor(conference.venueLat, conference.venueLng, 15);
-    const mclean = tileIndexFor(tysonsConference.venueLat, tysonsConference.venueLng, 15);
+    const austin = tileIndexFor(conference.venueLat, conference.venueLng, MAP_DEFAULT_ZOOM);
+    const mclean = tileIndexFor(
+      tysonsConference.venueLat,
+      tysonsConference.venueLng,
+      MAP_DEFAULT_ZOOM,
+    );
     expect(austin).not.toEqual(mclean);
   });
 
@@ -124,13 +139,17 @@ describe('tileUrl', () => {
 });
 
 describe('buildTileMosaic', () => {
-  const card = { width: 480, height: 302 };
+  // The card as the Location card actually asks for it.
+  const card = {
+    zoom: MAP_DEFAULT_ZOOM,
+    width: PREVIEW_CARD_WIDTH,
+    height: PREVIEW_CARD_HEIGHT,
+    retina: false,
+  };
   const austin = buildTileMosaic({
     lat: conference.venueLat,
     lng: conference.venueLng,
-    zoom: 15,
     ...card,
-    retina: false,
   });
 
   it('covers the card with a whole number of tiles', () => {
@@ -164,21 +183,19 @@ describe('buildTileMosaic', () => {
   });
 
   it('centres the mosaic on the tile holding the venue', () => {
-    const centre = tileIndexFor(conference.venueLat, conference.venueLng, 15);
+    const centre = tileIndexFor(conference.venueLat, conference.venueLng, card.zoom);
     const centreTile = austin.tiles.find(
       (t) => t.left === ((austin.cols - 1) / 2) * TILE_SIZE
         && t.top === ((austin.rows - 1) / 2) * TILE_SIZE,
     );
-    expect(centreTile?.url).toBe(tileUrl({ ...centre, zoom: 15, retina: false }));
+    expect(centreTile?.url).toBe(tileUrl({ ...centre, zoom: card.zoom, retina: false }));
   });
 
   it('shows a different set of tiles for the other conference', () => {
     const mclean = buildTileMosaic({
       lat: tysonsConference.venueLat,
       lng: tysonsConference.venueLng,
-      zoom: 15,
       ...card,
-      retina: false,
     });
     const austinUrls = new Set(austin.tiles.map((t) => t.url));
     expect(mclean.tiles.some((t) => austinUrls.has(t.url))).toBe(false);
@@ -188,9 +205,7 @@ describe('buildTileMosaic', () => {
     const again = buildTileMosaic({
       lat: conference.venueLat,
       lng: conference.venueLng,
-      zoom: 15,
       ...card,
-      retina: false,
     });
     expect(again).toEqual(austin);
   });
@@ -199,7 +214,6 @@ describe('buildTileMosaic', () => {
     const retina = buildTileMosaic({
       lat: conference.venueLat,
       lng: conference.venueLng,
-      zoom: 15,
       ...card,
       retina: true,
     });
@@ -207,21 +221,16 @@ describe('buildTileMosaic', () => {
     expect(retina.width).toBe(austin.width);
   });
 
-  it('wraps tile columns across the antimeridian instead of requesting negative x', () => {
-    const dateline = buildTileMosaic({
-      lat: 0,
-      lng: -179.99,
-      zoom: 2,
-      ...card,
-      retina: false,
-    });
-    expect(dateline.tiles.every((t) => /\/2\/\d+\/\d+/.test(t.url))).toBe(true);
+  it('stays inside the tile grid at the edges of the world', () => {
+    // Longitude wraps, so a mosaic on the antimeridian borrows columns from the
+    // far side rather than asking for a negative x; latitude doesn't, so a row
+    // past the pole is dropped and the card's dark background shows through.
+    const dateline = buildTileMosaic({ lat: 0, lng: -179.99, ...card, zoom: 2 });
+    expect(dateline.tiles.every((t) => /\/2\/[0-3]\/[0-3]\.png$/.test(t.url))).toBe(true);
     expect(dateline.tiles.some((t) => t.url.includes('/2/3/'))).toBe(true);
-  });
 
-  it('drops rows that fall off the top or bottom of the world', () => {
-    const pole = buildTileMosaic({ lat: 85, lng: 0, zoom: 2, ...card, retina: false });
-    expect(pole.tiles.length).toBeLessThan(pole.cols * pole.rows);
+    const pole = buildTileMosaic({ lat: 85, lng: 0, ...card, zoom: 2 });
+    expect(pole.tiles.length).toBe(pole.cols * (pole.rows - 1));
     expect(pole.tiles.every((t) => t.top >= 0)).toBe(true);
   });
 });

@@ -1135,13 +1135,13 @@ button:active {
   display: block;
 }
 
+/* Size comes from the img width/height attributes, i.e. from TILE_SIZE. */
 .location-map-tiles img {
   position: absolute;
   display: block;
-  width: 256px;
-  height: 256px;
 }
 
+/* Centres the map screen's .venue-pin on the card without touching its rules. */
 .location-map-pin {
   position: absolute;
   left: 50%;

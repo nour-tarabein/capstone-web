@@ -5,10 +5,10 @@
  * The card can't hold a second Leaflet instance: tab screens are conditionally
  * mounted, so every visit to More would build and tear down a map, and a map
  * initialised in a container that isn't laid out yet is the classic grey-tiles
- * bug. Instead the card lays out a handful of plain <img> tiles — the browser
- * cache makes the second visit free, and because the URLs come from the same
- * template the map screen uses, the two share cache entries and look
- * continuous when you tap through.
+ * bug. Instead the card lays out a handful of plain <img> tiles. The URLs are
+ * the same for every device and every render, so a second visit to More is
+ * served from the browser cache; and because they come from the template and
+ * opening zoom the map screen uses, the card looks like the screen it opens.
  */
 
 /** The map screen's basemap. Both surfaces read it from here so they can't drift. */
@@ -17,10 +17,21 @@ export const CARTO_SUBDOMAINS = 'abcd';
 export const TILE_SIZE = 256;
 
 /**
- * Close enough to read the venue's blocks at card size, still wide enough to
- * place it in the city.
+ * The zoom the map screen opens the venue at, and therefore the zoom the card
+ * previews it at — tapping through starts from the scale the card just showed.
+ * (The map screen then fits the night's events, so it moves from here.)
  */
-export const PREVIEW_ZOOM = 15;
+export const MAP_DEFAULT_ZOOM = 14;
+
+/**
+ * The Location card at its largest: the shell caps screens at 480px
+ * (styles.css `.shell`) and the card is 804/506 (styles.css
+ * `.location-map-card`). Sizing the mosaic to the biggest card the layout
+ * allows means one tile set for every device — identical URLs, so the cache
+ * works — and a narrower card simply crops the same mosaic.
+ */
+export const PREVIEW_CARD_WIDTH = 480;
+export const PREVIEW_CARD_HEIGHT = Math.round((PREVIEW_CARD_WIDTH * 506) / 804);
 
 /** Web Mercator stops here; past it the projection runs off to infinity. */
 const MAX_LATITUDE = 85.0511287798;
