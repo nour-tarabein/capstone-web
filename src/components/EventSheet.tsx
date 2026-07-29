@@ -72,8 +72,9 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
   const accent = event ? sourceColors[event.source] : colors.green;
   // An attendee-hosted event names its host on the card: putting your name on
   // the thing you host IS the opt-in, so there is nothing to gate here.
+  const { attendeesById } = getRoster(conference.id);
   const host = event?.submittedByAttendeeId
-    ? getRoster(conference.id).attendeesById.get(event.submittedByAttendeeId)
+    ? attendeesById.get(event.submittedByAttendeeId)
     : undefined;
 
   return (

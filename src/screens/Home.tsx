@@ -3,6 +3,7 @@ import heroBanner from '../assets/hero-banner.jpg';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { goToTab, openMap } from '../App';
 import { homeActions, sessionGuide } from '../data/mock';
+import { useActiveConference } from '../offsite/activeConference';
 import { useActiveRoster } from '../offsite/roster';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
@@ -19,9 +20,25 @@ const TILE_TARGETS: Record<string, () => void> = {
   games: () => openOverlay({ kind: 'games' }),
 };
 
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/** "Jul 30" for a single night, "Jul 30–31" for a contiguous run. */
+function formatNightRange(nights: string[]): string {
+  const [firstMonth, firstDay] = nights[0].split('-').slice(1).map(Number);
+  const month = MONTH_NAMES[firstMonth - 1];
+  if (nights.length === 1) return `${month} ${firstDay}`;
+  const lastDay = Number(nights[nights.length - 1].split('-')[2]);
+  return `${month} ${firstDay}–${lastDay}`;
+}
+
 export function HomeScreen() {
   const sessionCount = sessionGuide.filter((s) => !s.official).length;
   const { attendees } = useActiveRoster();
+  const activeConference = useActiveConference();
+  const nightsOut = activeConference.nights.length;
 
   return (
     <div className="screen home-screen">
@@ -37,13 +54,19 @@ export function HomeScreen() {
 
       <div className="screen-scroll home-content">
         <div className="hero-wrap">
-          <img src={heroBanner} alt="Austin skyline at dusk" className="hero-image" />
+          <img
+            src={heroBanner}
+            alt={`${activeConference.city} skyline at dusk`}
+            className="hero-image"
+          />
           <span className="hero-shade" />
           <span className="live-pill">
             <span className="live-dot" />
             Day 1 · Live
           </span>
-          <span className="hero-date">Jul 30–31 · Austin, TX</span>
+          <span className="hero-date">
+            {formatNightRange(activeConference.nights)} · {activeConference.city}
+          </span>
         </div>
 
         <div className="stat-row">
@@ -54,7 +77,7 @@ export function HomeScreen() {
             <strong>{sessionCount}</strong> sessions
           </span>
           <span className="stat-chip">
-            <strong>2</strong> nights out
+            <strong>{nightsOut}</strong> {nightsOut === 1 ? 'night' : 'nights'} out
           </span>
         </div>
 
