@@ -5,8 +5,8 @@ import {
   mdiCalendarPlus,
   mdiMapMarkerOutline,
 } from '@mdi/js';
-import { attendees } from '../offsite/fixtures/attendees';
 import { useViewerId } from '../offsite/persona';
+import { useActiveRoster } from '../offsite/roster';
 import { initials } from '../offsite/format';
 import {
   sessionDescriptions,
@@ -22,6 +22,7 @@ import { colors } from '../theme';
 export function SessionSheet({ sessionId }: { sessionId: string }) {
   const viewerId = useViewerId();
   useScheduleVersion();
+  const { attendees } = useActiveRoster();
 
   const session = sessionGuide.find((s) => s.id === sessionId);
   const speaker = speakersBySession.get(sessionId);
@@ -30,7 +31,7 @@ export function SessionSheet({ sessionId }: { sessionId: string }) {
   // Roster-registered count — the same fixture data the attending list uses.
   const registered = useMemo(
     () => attendees.filter((a) => a.sessionIds.includes(sessionId)).length,
-    [sessionId],
+    [attendees, sessionId],
   );
 
   if (!session) return null;

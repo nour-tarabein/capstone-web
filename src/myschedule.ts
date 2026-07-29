@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { attendeesById } from './offsite/fixtures/attendees';
+import { allAttendeesById } from './offsite/roster';
 
 /**
  * Sessions the viewer added on top of what their persona pre-registered for.
@@ -28,19 +28,19 @@ function emit() {
 export function isOnSchedule(viewerId: string, sessionId: string): boolean {
   if (bucket(removed, viewerId).has(sessionId)) return false;
   if (bucket(added, viewerId).has(sessionId)) return true;
-  return attendeesById.get(viewerId)?.sessionIds.includes(sessionId) ?? false;
+  return allAttendeesById.get(viewerId)?.sessionIds.includes(sessionId) ?? false;
 }
 
 export function toggleSession(viewerId: string, sessionId: string): boolean {
   const nowOn = !isOnSchedule(viewerId, sessionId);
   if (nowOn) {
     bucket(removed, viewerId).delete(sessionId);
-    if (!attendeesById.get(viewerId)?.sessionIds.includes(sessionId)) {
+    if (!allAttendeesById.get(viewerId)?.sessionIds.includes(sessionId)) {
       bucket(added, viewerId).add(sessionId);
     }
   } else {
     bucket(added, viewerId).delete(sessionId);
-    if (attendeesById.get(viewerId)?.sessionIds.includes(sessionId)) {
+    if (allAttendeesById.get(viewerId)?.sessionIds.includes(sessionId)) {
       bucket(removed, viewerId).add(sessionId);
     }
   }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { mdiAccountOutline, mdiCalendarBlankOutline, mdiMagnify, mdiStorefrontOutline } from '@mdi/js';
-import { attendees } from '../offsite/fixtures/attendees';
+import { useActiveRoster } from '../offsite/roster';
 import { initials } from '../offsite/format';
 import { exhibitors, sessionGuide } from '../data/mock';
 import { openOverlay } from '../overlays';
@@ -11,6 +11,7 @@ import { colors } from '../theme';
 export function SearchSheet() {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const { attendees } = useActiveRoster();
 
   useEffect(() => {
     // After the slide-up settles — focusing earlier makes the keyboard fight

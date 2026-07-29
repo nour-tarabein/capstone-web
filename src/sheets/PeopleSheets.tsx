@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { mdiMagnify, mdiSend } from '@mdi/js';
-import { attendees, attendeesById } from '../offsite/fixtures/attendees';
 import { setViewerId, useViewerId } from '../offsite/persona';
+import { useActiveRoster } from '../offsite/roster';
 import { sessionTitles } from '../offsite/fixtures/sessions';
 import { initials } from '../offsite/format';
 import { openOverlay } from '../overlays';
@@ -14,6 +14,7 @@ import { colors } from '../theme';
  *  named — the same privacy rule the attending list follows. */
 export function AttendeesSheet() {
   const [query, setQuery] = useState('');
+  const { attendees } = useActiveRoster();
   const visible = attendees.filter((a) => a.directoryOptIn);
   const hidden = attendees.length - visible.length;
   const q = query.trim().toLowerCase();
@@ -72,6 +73,7 @@ export function AttendeesSheet() {
 export function ProfileSheet({ attendeeId }: { attendeeId: string }) {
   const viewerId = useViewerId();
   const dismiss = useDismiss();
+  const { attendeesById } = useActiveRoster();
   const person = attendeesById.get(attendeeId);
   if (!person) return null;
 
@@ -159,6 +161,7 @@ const REPLIES = [
 ];
 
 export function DMSheet({ attendeeId }: { attendeeId: string }) {
+  const { attendeesById } = useActiveRoster();
   const person = attendeesById.get(attendeeId);
   const [bubbles, setBubbles] = useState<Bubble[]>(() =>
     person ? openerFor(person.name) : [],

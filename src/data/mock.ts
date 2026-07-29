@@ -239,9 +239,3 @@ export const moreGeneralItems = [
 export const moreInviteOnlyItems = [
   { id: 'awards', label: 'Excellence Awards', icon: mdiMedalOutline },
 ];
-
-/** From the conference fixture, so the Location card cannot disagree with the
- *  map or the "x mi from venue" distances. */
-export const eventLocation = {
-  name: conference.venueName,
-};

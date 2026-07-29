@@ -7,10 +7,11 @@ import { HostSheet } from '../components/HostSheet';
 import { SourceBadge } from '../components/SourceBadge';
 import type { Conference, OffsiteEvent } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
-import { conference as austinConference, nightLabels } from '../offsite/fixtures/conference';
-import { attendeesById } from '../offsite/fixtures/attendees';
+import { useActiveConferenceId } from '../offsite/activeConference';
+import { nightLabels } from '../offsite/fixtures/conference';
 import { milesBetween } from '../offsite/ingestion/curate';
 import { useViewerId } from '../offsite/persona';
+import { useActiveRoster } from '../offsite/roster';
 import { formatTime, sourceColors, sourceLabels, sourceNeedsDarkText } from '../offsite/format';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -42,8 +43,10 @@ export function MapScreen() {
   const stripRef = useRef<HTMLDivElement>(null);
 
   const viewerId = useViewerId();
+  const activeConferenceId = useActiveConferenceId();
   // Local roster is source of truth for who "you" are — avoids a stale
   // Supabase seed (e.g. old a3 = Priya) overriding the Cvent roster.
+  const { attendeesById } = useActiveRoster();
   const viewer = attendeesById.get(viewerId) ?? null;
   const [conference, setConference] = useState<Conference | null>(null);
   const [night, setNight] = useState<string | null>(null);
@@ -56,25 +59,23 @@ export function MapScreen() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    void repository.getConference(austinConference.id).then(
+    void repository.getConference(activeConferenceId).then(
       (c) => {
         setConference(c);
-        setNight((prev) =>
-          prev && c.nights.includes(prev) ? prev : defaultNight(c.nights),
-        );
+        setNight(defaultNight(c.nights));
       },
       (err: unknown) => console.error('[map] getConference failed', err),
     );
-  }, []);
+  }, [activeConferenceId]);
 
   const loadNight = useCallback(async () => {
     if (!night) return;
     try {
-      const list = await repository.listEventsForNight(austinConference.id, night);
+      const list = await repository.listEventsForNight(activeConferenceId, night);
       setEvents(list);
       setGoingCounts(
         await repository.getGoingCounts(
-          austinConference.id,
+          activeConferenceId,
           list.map((e) => e.id),
         ),
       );
@@ -82,7 +83,7 @@ export function MapScreen() {
       console.error('[map] listEventsForNight failed', err);
       setEvents([]);
     }
-  }, [night]);
+  }, [activeConferenceId, night]);
 
   useEffect(() => {
     void loadNight();
