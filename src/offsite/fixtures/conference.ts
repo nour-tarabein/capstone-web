@@ -13,18 +13,21 @@ export const conference: Conference = {
 }
 
 /**
- * Tysons Corner — second conference fixture for the conference-scoped data
- * prefactor. Placeholder personnel and events only (see fixtures/attendeesTysons.ts
- * and fixtures/eventsTysons.ts); no screen reads this yet, so nothing about the
- * app's current Austin-only behavior changes.
+ * Tysons Corner — second conference fixture, seeded with a real CEO roster and
+ * real nearby events (issue #8; see fixtures/attendeesTysons.ts and
+ * fixtures/eventsTysons.ts).
+ *
+ * Coordinates are the geocoded position of 1765 Greensboro Station Pl, so the
+ * map centre and every "N mi from venue" rationale measure from where the
+ * conference actually is.
  */
 export const tysonsConference: Conference = {
   id: 'lts-tysons-2026',
   name: 'Lonestar Tech Summit 2026',
   city: 'McLean, VA',
   venueName: '1765 Greensboro Station Pl, 7th Floor',
-  venueLat: 38.9196,
-  venueLng: -77.2264,
+  venueLat: 38.9221,
+  venueLng: -77.2332,
   nights: ['2026-07-30'],
   topicTags: ['AI', 'FinTech', 'DevTools', 'Design', 'Climate'],
 }
