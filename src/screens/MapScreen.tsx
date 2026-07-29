@@ -10,11 +10,11 @@ import { getRepository } from '../offsite/data';
 import { useActiveConferenceId } from '../offsite/activeConference';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { milesBetween } from '../offsite/ingestion/curate';
-import { useViewerId } from '../offsite/persona';
-import { useActiveRoster } from '../offsite/roster';
 import { formatTime, sourceColors, sourceLabels, sourceNeedsDarkText } from '../offsite/format';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+import { getMapEventCategory } from '../mapEventCategory';
+import { useActiveViewer } from '../activeViewer';
 
 /**
  * The web port of the app's single map. Mapbox-in-a-WebView becomes Leaflet
@@ -42,12 +42,8 @@ export function MapScreen() {
   const markersRef = useRef<L.LayerGroup | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
-  const viewerId = useViewerId();
   const activeConferenceId = useActiveConferenceId();
-  // Local roster is source of truth for who "you" are — avoids a stale
-  // Supabase seed (e.g. old a3 = Priya) overriding the Cvent roster.
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(viewerId) ?? null;
+  const viewer = useActiveViewer();
   const [conference, setConference] = useState<Conference | null>(null);
   const [night, setNight] = useState<string | null>(null);
   const [events, setEvents] = useState<OffsiteEvent[]>([]);
@@ -165,20 +161,29 @@ export function MapScreen() {
     events.forEach((event, i) => {
       const count = goingCounts[event.id] ?? 0;
       const selected = event.id === selectedEventId;
-      const dark = sourceNeedsDarkText[event.source];
-      const color = sourceColors[event.source];
+      const category = getMapEventCategory(event);
+      const sourceColor = sourceColors[event.source];
+      const iconColor = sourceNeedsDarkText[event.source] ? '#07120c' : '#ffffff';
       const icon = L.divIcon({
-        className: '',
+        className: 'event-map-marker',
         html:
-          `<div class="pin-drop" style="animation-delay:${i * 55}ms">` +
-          (selected ? `<div class="map-pin-halo" style="background:${color}"></div>` : '') +
-          `<div class="map-pin${selected ? ' map-pin-selected' : ''}" ` +
-          `style="background:${color};color:${dark ? '#111111' : '#FFFFFF'};--pin-glow:${color}66">` +
-          `${count > 0 ? count : ''}</div></div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
+          `<div class="pin-drop" style="animation-delay:${i * 55}ms;--pin-color:${sourceColor};--pin-icon-color:${iconColor}">` +
+          (selected ? '<div class="map-pin-halo"></div>' : '') +
+          `<div class="map-pin${selected ? ' map-pin-selected' : ''}">` +
+          `<svg class="map-pin-icon" viewBox="0 0 24 24" aria-hidden="true">` +
+          `<path d="${category.iconPath}"></path></svg></div>` +
+          (count > 0 ? `<span class="map-pin-count">${count}</span>` : '') +
+          '</div>',
+        // A generous transparent box makes the pin reliable to tap on touch
+        // screens; the visible drop stays compact inside it.
+        iconSize: [48, 52],
+        iconAnchor: [24, 46],
       });
-      L.marker([event.lat, event.lng], { icon, riseOnHover: true })
+      L.marker([event.lat, event.lng], {
+        icon,
+        riseOnHover: true,
+        title: `${category.label}: ${event.title}`,
+      })
         .on('click', () => select(event.id, true))
         .addTo(layer);
     });
