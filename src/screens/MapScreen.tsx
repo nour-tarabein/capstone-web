@@ -13,6 +13,7 @@ import { milesBetween } from '../offsite/ingestion/curate';
 import { useViewerId } from '../offsite/persona';
 import { useActiveRoster } from '../offsite/roster';
 import { formatTime, sourceColors, sourceLabels, sourceNeedsDarkText } from '../offsite/format';
+import { CARTO_DARK_TILE_URL, CARTO_SUBDOMAINS } from '../mapTiles';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
@@ -99,8 +100,10 @@ export function MapScreen() {
       [conference.venueLat, conference.venueLng],
       14,
     );
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
+    // Shared with More's static Location-card preview, so the card you tap
+    // and the screen it opens draw from the same tiles. See src/mapTiles.ts.
+    L.tileLayer(CARTO_DARK_TILE_URL, {
+      subdomains: CARTO_SUBDOMAINS,
       maxZoom: 19,
     }).addTo(map);
 

@@ -9,6 +9,7 @@ import {
   mdiTrayFull,
 } from '@mdi/js';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { VenueMapPreview } from '../components/VenueMapPreview';
 import { openMap, openReview } from '../App';
 import { moreGeneralItems, moreInviteOnlyItems, moreMenuItems } from '../data/mock';
 import { getRepository } from '../offsite/data';
@@ -233,7 +234,7 @@ export function MoreScreen() {
           onClick={openMap}
           aria-label={`Open map for ${activeConference.venueName}`}
         >
-          <Icon path={mdiMapOutline} size={26} color={colors.textMutedDark} />
+          <VenueMapPreview conference={activeConference} />
           <span className="location-map-chip">Tap to open map</span>
         </button>
 
