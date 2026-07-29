@@ -25,6 +25,9 @@ Fictional attendees seeded into a conference's roster so the room feels populate
 **Viewer**:
 The attendee identity the current browser is displaying the app as — either a real check-in or (for admins only, see Persona switcher) a mock persona being previewed.
 
+**Conference default viewer**:
+The per-conference fallback identity shown when the stored viewer does not belong to the active conference. It is resolved only when read and never replaces the stored viewer, so switching back restores the browser's prior check-in or persona.
+
 **Persona switcher**:
 The "Viewing as" control in More that lets the current browser preview the app as a different attendee. For a live conference with real check-ins, this is admin-only — a regular attendee is locked into their own check-in identity.
 

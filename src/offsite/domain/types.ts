@@ -22,6 +22,8 @@ export interface Conference {
   name: string
   city: string
   venueName: string
+  /** Read-time fallback when the stored viewer is not part of this conference. */
+  defaultViewerId: string
   /** Curation radius and "distance from venue" are both measured from here. */
   venueLat: number
   venueLng: number

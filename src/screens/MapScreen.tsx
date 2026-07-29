@@ -10,8 +10,7 @@ import { getRepository } from '../offsite/data';
 import { useActiveConferenceId } from '../offsite/activeConference';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { milesBetween } from '../offsite/ingestion/curate';
-import { useViewerId } from '../offsite/persona';
-import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { formatTime, sourceColors, sourceLabels, sourceNeedsDarkText } from '../offsite/format';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -42,12 +41,8 @@ export function MapScreen() {
   const markersRef = useRef<L.LayerGroup | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
-  const viewerId = useViewerId();
   const activeConferenceId = useActiveConferenceId();
-  // Local roster is source of truth for who "you" are — avoids a stale
-  // Supabase seed (e.g. old a3 = Priya) overriding the Cvent roster.
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(viewerId) ?? null;
+  const viewer = useViewer();
   const [conference, setConference] = useState<Conference | null>(null);
   const [night, setNight] = useState<string | null>(null);
   const [events, setEvents] = useState<OffsiteEvent[]>([]);

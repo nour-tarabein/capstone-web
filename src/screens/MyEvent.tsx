@@ -1,7 +1,6 @@
 import { mdiBellOutline, mdiMapOutline, mdiQrcode } from '@mdi/js';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { useViewerId } from '../offsite/persona';
-import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { initials } from '../offsite/format';
 import { sessionGuide, unreadUpdateCount, updates } from '../data/mock';
 import { openMap } from '../App';
@@ -11,8 +10,7 @@ import { colors } from '../theme';
 
 export function MyEventScreen() {
   // Same persona the offsite map uses, so switching there follows here too.
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(useViewerId());
+  const viewer = useViewer();
   // "Now" is day 1 (Thu) mid-afternoon, so the next official thing is the
   // sponsor happy hour at 5.
   const upNext = sessionGuide.find((s) => s.id === 'happy-hour');
