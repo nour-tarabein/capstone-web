@@ -20,6 +20,7 @@ import {
 import { setAdminMode, useAdminMode } from '../offsite/adminMode';
 import { conferences } from '../offsite/fixtures/conference';
 import { initials } from '../offsite/format';
+import { shouldShowOrganizerToggle, shouldShowPersonaSwitcher } from '../offsite/moreVisibility';
 import { setViewerId, useViewerId } from '../offsite/persona';
 import { useActiveRoster } from '../offsite/roster';
 import { openOverlay, type Overlay } from '../overlays';
@@ -54,6 +55,8 @@ export function MoreScreen() {
   const activeConference = useActiveConference();
   const { attendees, attendeesById } = useActiveRoster();
   const viewer = attendeesById.get(viewerId);
+  const showOrganizerToggle = shouldShowOrganizerToggle(activeConferenceId);
+  const showPersonaSwitcher = shouldShowPersonaSwitcher(activeConferenceId, adminMode);
 
   // Refresh when organizer mode turns on, when the active conference changes,
   // and again when the tab regains focus after a trip to the review queue —
@@ -149,55 +152,61 @@ export function MoreScreen() {
           <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
         </button>
 
+        {showPersonaSwitcher ? (
+          <>
+            <div className="section-divider" />
+
+            <div className="persona-settings">
+              <span className="more-section-title">Viewing as</span>
+              <p className="admin-hint persona-settings-hint">
+                {viewer
+                  ? `${viewer.name} · ${viewer.title}`
+                  : 'Pick who you are for this demo'}
+              </p>
+              <div className="persona-settings-list">
+                {attendees.map((person) => {
+                  const active = person.id === viewerId;
+                  return (
+                    <button
+                      key={person.id}
+                      className={active ? 'persona persona-active' : 'persona'}
+                      onClick={() => setViewerId(person.id)}
+                    >
+                      <span className="persona-avatar">{initials(person.name)}</span>
+                      <span className="persona-settings-name">
+                        <span>{person.name}</span>
+                        <span className="persona-settings-meta">{person.company}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        ) : null}
+
         <div className="section-divider" />
 
-        <div className="persona-settings">
-          <span className="more-section-title">Viewing as</span>
-          <p className="admin-hint persona-settings-hint">
-            {viewer
-              ? `${viewer.name} · ${viewer.title}`
-              : 'Pick who you are for this demo'}
-          </p>
-          <div className="persona-settings-list">
-            {attendees.map((person) => {
-              const active = person.id === viewerId;
-              return (
-                <button
-                  key={person.id}
-                  className={active ? 'persona persona-active' : 'persona'}
-                  onClick={() => setViewerId(person.id)}
-                >
-                  <span className="persona-avatar">{initials(person.name)}</span>
-                  <span className="persona-settings-name">
-                    <span>{person.name}</span>
-                    <span className="persona-settings-meta">{person.company}</span>
-                  </span>
-                </button>
-              );
-            })}
+        {showOrganizerToggle ? (
+          // Demo affordance: in production the organizer console is a
+          // separate surface behind a separate login. See src/offsite/adminMode.ts.
+          <div className="admin-row">
+            <Icon path={mdiShieldCheckOutline} size={22} color={colors.green} />
+            <span className="admin-label-wrap">
+              <span className="offsite-row-text">Organizer mode</span>
+              <span className="admin-hint">Review events attendees submit</span>
+            </span>
+            <button
+              role="switch"
+              aria-checked={adminMode}
+              aria-label="Toggle organizer mode"
+              className={adminMode ? 'toggle toggle-on' : 'toggle'}
+              onClick={() => setAdminMode(!adminMode)}
+            >
+              <span className="toggle-thumb" />
+            </button>
           </div>
-        </div>
-
-        <div className="section-divider" />
-
-        {/* Demo affordance: in production the organizer console is a separate
-            surface behind a separate login. See src/offsite/adminMode.ts. */}
-        <div className="admin-row">
-          <Icon path={mdiShieldCheckOutline} size={22} color={colors.green} />
-          <span className="admin-label-wrap">
-            <span className="offsite-row-text">Organizer mode</span>
-            <span className="admin-hint">Review events attendees submit</span>
-          </span>
-          <button
-            role="switch"
-            aria-checked={adminMode}
-            aria-label="Toggle organizer mode"
-            className={adminMode ? 'toggle toggle-on' : 'toggle'}
-            onClick={() => setAdminMode(!adminMode)}
-          >
-            <span className="toggle-thumb" />
-          </button>
-        </div>
+        ) : null}
 
         {adminMode ? (
           <button

@@ -60,7 +60,6 @@ export function WelcomeScreen() {
           className="field-input"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
-          placeholder="Jamie"
           maxLength={60}
           autoFocus
         />
@@ -71,7 +70,6 @@ export function WelcomeScreen() {
           className="field-input"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
-          placeholder="Rivera"
           maxLength={60}
         />
 
