@@ -47,7 +47,7 @@ export async function checkIn(conferenceId: string, input: CheckInInput): Promis
   await refreshLiveRoster(conferenceId)
 
   if (conferenceId === tysonsConference.id && isAllowlistedAdmin(firstName, lastName)) {
-    setAdminMode(true)
+    setAdminMode(conferenceId, true)
   }
 
   return attendee

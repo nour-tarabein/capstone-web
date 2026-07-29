@@ -48,10 +48,10 @@ function openRow(id: string) {
 export function MoreScreen() {
   const [generalOpen, setGeneralOpen] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(true);
-  const adminMode = useAdminMode();
   const [pendingCount, setPendingCount] = useState(0);
   const viewerId = useViewerId();
   const activeConferenceId = useActiveConferenceId();
+  const adminMode = useAdminMode(activeConferenceId);
   const activeConference = useActiveConference();
   const { attendees, attendeesById } = useActiveRoster();
   const viewer = attendeesById.get(viewerId);
@@ -201,7 +201,7 @@ export function MoreScreen() {
               aria-checked={adminMode}
               aria-label="Toggle organizer mode"
               className={adminMode ? 'toggle toggle-on' : 'toggle'}
-              onClick={() => setAdminMode(!adminMode)}
+              onClick={() => setAdminMode(activeConferenceId, !adminMode)}
             >
               <span className="toggle-thumb" />
             </button>
