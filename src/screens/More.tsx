@@ -170,7 +170,10 @@ export function MoreScreen() {
                     <button
                       key={person.id}
                       className={active ? 'persona persona-active' : 'persona'}
-                      onClick={() => setViewerId(person.id)}
+                      aria-pressed={active}
+                      onClick={() => {
+                        if (!active) setViewerId(person.id);
+                      }}
                     >
                       <span className="persona-avatar">{initials(person.name)}</span>
                       <span className="persona-settings-name">

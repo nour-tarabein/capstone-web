@@ -120,7 +120,6 @@ export function createMockRepository(): Repository {
     },
 
     async getViewer(conferenceId: string): Promise<Attendee> {
-      bundleFor(conferenceId)
       return resolveViewer(conferenceId, getViewerId())
     },
 
