@@ -64,3 +64,17 @@ The map screen uses **Leaflet** with CARTO's dark basemap — no Mapbox token ne
 ### Build / deploy
 
 Vite is configured with `base: './'` so the build works from any URL path, including GitHub Pages project sites (`/<repo-name>/`). The deploy workflow is at `.github/workflows/deploy.yml`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues for `nour-tarabein/capstone-web`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — `CONTEXT.md` + `docs/adr/` at the repo root (created lazily as needed). See `docs/agents/domain.md`.
