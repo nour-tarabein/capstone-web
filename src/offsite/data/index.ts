@@ -16,8 +16,9 @@ const liveRepository = supabaseConfigured ? createSupabaseRepository() : null;
  * The repository for one conference (issue #7). Austin runs on the mock
  * repository unconditionally; Tysons Corner runs on the live Supabase
  * repository once VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are set, and
- * falls back to mock otherwise — a fresh clone and the default GitHub Pages
- * build still run with zero setup and survive a dead network (DESIGN.md #11).
+ * falls back to mock otherwise — a fresh clone and a deploy with no environment
+ * variables set still run with zero setup and survive a dead network
+ * (DESIGN.md #11).
  */
 export function getRepository(conferenceId: string): Repository {
   if (liveRepository && isLiveConference(conferenceId)) return liveRepository;
