@@ -18,6 +18,7 @@ import {
 import { repository } from '../offsite/data';
 import { setAdminMode, useAdminMode } from '../offsite/adminMode';
 import { attendees, attendeesById } from '../offsite/fixtures/attendees';
+import { conference } from '../offsite/fixtures/conference';
 import { initials } from '../offsite/format';
 import { setViewerId, useViewerId } from '../offsite/persona';
 import { openOverlay, type Overlay } from '../overlays';
@@ -58,7 +59,7 @@ export function MoreScreen() {
     let cancelled = false;
     const refresh = () =>
       void repository
-        .listPendingEvents()
+        .listPendingEvents(conference.id)
         .then((list) => {
           if (!cancelled) setPendingCount(list.length);
         })

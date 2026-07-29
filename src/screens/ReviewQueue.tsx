@@ -11,7 +11,7 @@ import { SourceBadge } from '../components/SourceBadge';
 import type { PendingEvent } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
 import { formatTime } from '../offsite/format';
-import { nightLabels } from '../offsite/fixtures/conference';
+import { conference, nightLabels } from '../offsite/fixtures/conference';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
@@ -27,7 +27,7 @@ export function ReviewQueueScreen() {
   const [decided, setDecided] = useState<Record<string, 'approved' | 'rejected'>>({});
 
   const load = useCallback(async () => {
-    setPending(await repository.listPendingEvents());
+    setPending(await repository.listPendingEvents(conference.id));
   }, []);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export function ReviewQueueScreen() {
   async function review(event: PendingEvent, status: 'approved' | 'rejected') {
     setBusyId(event.id);
     try {
-      await repository.reviewEvent(event.id, status);
+      await repository.reviewEvent(conference.id, event.id, status);
       setDecided((prev) => ({ ...prev, [event.id]: status }));
     } finally {
       setBusyId(null);

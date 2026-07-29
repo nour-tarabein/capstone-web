@@ -7,7 +7,7 @@ import { HostSheet } from '../components/HostSheet';
 import { SourceBadge } from '../components/SourceBadge';
 import type { Conference, OffsiteEvent } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
-import { nightLabels } from '../offsite/fixtures/conference';
+import { conference as austinConference, nightLabels } from '../offsite/fixtures/conference';
 import { attendeesById } from '../offsite/fixtures/attendees';
 import { milesBetween } from '../offsite/ingestion/curate';
 import { useViewerId } from '../offsite/persona';
@@ -56,7 +56,7 @@ export function MapScreen() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    void repository.getConference().then(
+    void repository.getConference(austinConference.id).then(
       (c) => {
         setConference(c);
         setNight((prev) =>
@@ -70,9 +70,14 @@ export function MapScreen() {
   const loadNight = useCallback(async () => {
     if (!night) return;
     try {
-      const list = await repository.listEventsForNight(night);
+      const list = await repository.listEventsForNight(austinConference.id, night);
       setEvents(list);
-      setGoingCounts(await repository.getGoingCounts(list.map((e) => e.id)));
+      setGoingCounts(
+        await repository.getGoingCounts(
+          austinConference.id,
+          list.map((e) => e.id),
+        ),
+      );
     } catch (err) {
       console.error('[map] listEventsForNight failed', err);
       setEvents([]);
