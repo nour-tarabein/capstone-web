@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import type { Conference } from './domain/types';
 import { conferencesById, tysonsConference } from './fixtures/conference';
 
 /**
@@ -9,11 +10,10 @@ import { conferencesById, tysonsConference } from './fixtures/conference';
  * refresh keeps the same conference. First visit with no stored id defaults to
  * Tysons Corner.
  *
- * This is the conference-scoped data prefactor (issue #3): the store exists
- * and is fully functional, but no screen reads it yet — every screen still
- * calls the repository with the Austin fixture id directly, so the app keeps
- * showing Austin end-to-end unchanged. Wiring screens to this store is the
- * next ticket.
+ * Switched from a control in More, near "Exit event" (issue #4). Every screen
+ * that shows conference-scoped data — the map's venue, the attendee roster,
+ * session-matching, and More's Location card — reads the active conference id
+ * from here instead of importing a fixture directly.
  */
 const STORAGE_KEY = 'lts-active-conference-id-v1';
 const DEFAULT_CONFERENCE_ID = tysonsConference.id;
@@ -62,4 +62,11 @@ export function subscribeToActiveConference(fn: () => void): () => void {
 
 export function useActiveConferenceId(): string {
   return useSyncExternalStore(subscribeToActiveConference, getActiveConferenceId);
+}
+
+/** The active conference's static fixture (venue, nights, topic tags, ...). */
+export function useActiveConference(): Conference {
+  const id = useActiveConferenceId();
+  // getActiveConferenceId/setActiveConferenceId only ever store a known id.
+  return conferencesById.get(id)!;
 }

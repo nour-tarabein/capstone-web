@@ -3,24 +3,25 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiChevronUp,
+  mdiMapMarkerOutline,
   mdiMapOutline,
   mdiShieldCheckOutline,
   mdiTrayFull,
 } from '@mdi/js';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { openMap, openReview } from '../App';
-import {
-  eventLocation,
-  moreGeneralItems,
-  moreInviteOnlyItems,
-  moreMenuItems,
-} from '../data/mock';
+import { moreGeneralItems, moreInviteOnlyItems, moreMenuItems } from '../data/mock';
 import { repository } from '../offsite/data';
+import {
+  setActiveConferenceId,
+  useActiveConference,
+  useActiveConferenceId,
+} from '../offsite/activeConference';
 import { setAdminMode, useAdminMode } from '../offsite/adminMode';
-import { attendees, attendeesById } from '../offsite/fixtures/attendees';
-import { conference } from '../offsite/fixtures/conference';
+import { conferences } from '../offsite/fixtures/conference';
 import { initials } from '../offsite/format';
 import { setViewerId, useViewerId } from '../offsite/persona';
+import { useActiveRoster } from '../offsite/roster';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -49,17 +50,20 @@ export function MoreScreen() {
   const adminMode = useAdminMode();
   const [pendingCount, setPendingCount] = useState(0);
   const viewerId = useViewerId();
+  const activeConferenceId = useActiveConferenceId();
+  const activeConference = useActiveConference();
+  const { attendees, attendeesById } = useActiveRoster();
   const viewer = attendeesById.get(viewerId);
 
-  // Refresh when organizer mode turns on and again when the tab regains
-  // focus after a trip to the review queue — the badge has to drop once
-  // something is approved, otherwise it lies.
+  // Refresh when organizer mode turns on, when the active conference changes,
+  // and again when the tab regains focus after a trip to the review queue —
+  // the badge has to drop once something is approved, otherwise it lies.
   useEffect(() => {
     if (!adminMode) return;
     let cancelled = false;
     const refresh = () =>
       void repository
-        .listPendingEvents(conference.id)
+        .listPendingEvents(activeConferenceId)
         .then((list) => {
           if (!cancelled) setPendingCount(list.length);
         })
@@ -72,7 +76,7 @@ export function MoreScreen() {
       cancelled = true;
       window.removeEventListener('hashchange', refresh);
     };
-  }, [adminMode]);
+  }, [adminMode, activeConferenceId]);
 
   return (
     <div className="screen screen-light">
@@ -212,17 +216,50 @@ export function MoreScreen() {
 
         <div className="location-header">
           <span className="more-section-title">Location</span>
-          <span className="location-name">{eventLocation.name}</span>
+          <span className="location-name">{activeConference.venueName}</span>
         </div>
 
         <button
           className="location-map-card"
           onClick={openMap}
-          aria-label={`Open map for ${eventLocation.name}`}
+          aria-label={`Open map for ${activeConference.venueName}`}
         >
           <Icon path={mdiMapOutline} size={26} color={colors.textMutedDark} />
           <span className="location-map-chip">Tap to open map</span>
         </button>
+
+        <div className="section-divider" />
+
+        <div className="persona-settings">
+          <span className="more-section-title">Active conference</span>
+          <p className="admin-hint persona-settings-hint">
+            Switch which conference this browser is showing.
+          </p>
+          <div className="persona-settings-list">
+            {conferences.map((c) => {
+              const active = c.id === activeConferenceId;
+              return (
+                <button
+                  key={c.id}
+                  className={active ? 'persona persona-active' : 'persona'}
+                  onClick={() => setActiveConferenceId(c.id)}
+                >
+                  <span className="persona-avatar">
+                    <Icon
+                      path={mdiMapMarkerOutline}
+                      size={14}
+                      color={active ? colors.textDark : colors.textMutedDark}
+                    />
+                  </span>
+                  <span className="persona-settings-name">
+                    <span>{c.city}</span>
+                    <span className="persona-settings-meta">{c.venueName}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <button className="exit-button" onClick={() => openOverlay({ kind: 'exit' })}>
           Exit event

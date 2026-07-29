@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { mdiSend, mdiStarFourPoints } from '@mdi/js';
-import { attendeesById } from '../offsite/fixtures/attendees';
+import type { Attendee } from '../offsite/domain/types';
 import { useViewerId } from '../offsite/persona';
+import { useActiveRoster } from '../offsite/roster';
 import { sessionGuide, wifiInfo } from '../data/mock';
 import { openMap } from '../App';
 import { useDismiss } from '../ui/Sheet';
@@ -22,9 +23,8 @@ const SUGGESTIONS = [
   'What’s the WiFi password?',
 ];
 
-function answer(question: string, viewerId: string): Msg {
+function answer(question: string, viewer: Attendee | undefined): Msg {
   const q = question.toLowerCase();
-  const viewer = attendeesById.get(viewerId);
 
   if (q.includes('tonight') || q.includes('evening')) {
     return {
@@ -82,11 +82,13 @@ function answer(question: string, viewerId: string): Msg {
 
 export function ConciergeSheet() {
   const viewerId = useViewerId();
+  const { attendeesById } = useActiveRoster();
+  const viewer = attendeesById.get(viewerId);
   const dismiss = useDismiss();
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: 'bot',
-      text: `Hi ${attendeesById.get(viewerId)?.name.split(' ')[0] ?? 'there'}! I’m the summit concierge. What do you need?`,
+      text: `Hi ${viewer?.name.split(' ')[0] ?? 'there'}! I’m the summit concierge. What do you need?`,
     },
   ]);
   const [draft, setDraft] = useState('');
@@ -117,7 +119,7 @@ export function ConciergeSheet() {
     setTyping(true);
     window.setTimeout(() => {
       setTyping(false);
-      setMessages((m) => [...m, answer(question, viewerId)]);
+      setMessages((m) => [...m, answer(question, viewer)]);
       setRevealed(0);
     }, 900);
   }

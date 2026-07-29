@@ -7,7 +7,7 @@ import type {
   OffsiteEvent,
 } from '../offsite/domain/types';
 import { repository } from '../offsite/data';
-import { attendeesById } from '../offsite/fixtures/attendees';
+import { getRoster } from '../offsite/roster';
 import { milesBetween } from '../offsite/ingestion/curate';
 import { formatTime, sourceColors, sourceLabels } from '../offsite/format';
 import { SourceBadge } from './SourceBadge';
@@ -73,7 +73,7 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
   // An attendee-hosted event names its host on the card: putting your name on
   // the thing you host IS the opt-in, so there is nothing to gate here.
   const host = event?.submittedByAttendeeId
-    ? attendeesById.get(event.submittedByAttendeeId)
+    ? getRoster(conference.id).attendeesById.get(event.submittedByAttendeeId)
     : undefined;
 
   return (

@@ -3,7 +3,7 @@ import heroBanner from '../assets/hero-banner.jpg';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { goToTab, openMap } from '../App';
 import { homeActions, sessionGuide } from '../data/mock';
-import { attendees } from '../offsite/fixtures/attendees';
+import { useActiveRoster } from '../offsite/roster';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -21,6 +21,7 @@ const TILE_TARGETS: Record<string, () => void> = {
 
 export function HomeScreen() {
   const sessionCount = sessionGuide.filter((s) => !s.official).length;
+  const { attendees } = useActiveRoster();
 
   return (
     <div className="screen home-screen">
