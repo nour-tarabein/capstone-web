@@ -12,9 +12,10 @@ A browser demo of the **Lonestar Tech Summit 2026** conference app — a React/T
 npm run dev       # start dev server
 npm run build     # tsc type check + vite build (outputs to dist/)
 npm run preview   # preview the production build locally
+npm test          # run the Vitest suite
 ```
 
-No test suite. Type checking is `tsc` (via `npm run build`). There is no lint script configured.
+Tests are run with Vitest. Type checking is `tsc` (via `npm run build`). There is no lint script configured.
 
 ## Architecture
 
