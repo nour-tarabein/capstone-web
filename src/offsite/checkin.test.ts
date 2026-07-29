@@ -74,6 +74,32 @@ describe('checkin', () => {
     ).rejects.toThrow()
   })
 
+  it('turns on organizer mode automatically when the checked-in name matches the admin allowlist', async () => {
+    const { checkIn } = await import('./checkin')
+    const { getAdminMode } = await import('./adminMode')
+
+    await checkIn(tysonsConference.id, {
+      firstName: 'jordan',
+      lastName: 'BLAKE',
+      department: 'Technology',
+    })
+
+    expect(getAdminMode()).toBe(true)
+  })
+
+  it('leaves organizer mode off when the checked-in name is not on the admin allowlist', async () => {
+    const { checkIn } = await import('./checkin')
+    const { getAdminMode } = await import('./adminMode')
+
+    await checkIn(tysonsConference.id, {
+      firstName: 'Jamie',
+      lastName: 'Rivera',
+      department: 'Technology',
+    })
+
+    expect(getAdminMode()).toBe(false)
+  })
+
   it('keeps check-ins for different conferences independent', async () => {
     const { checkIn } = await import('./checkin')
     const { hasCheckedIn } = await import('./checkinStorage')
