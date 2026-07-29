@@ -2510,6 +2510,35 @@ button:active {
   resize: vertical;
 }
 
+/* ---- welcome / check-in screen ---- */
+.welcome-content {
+  padding: calc(env(safe-area-inset-top) + 56px) 20px 24px;
+}
+
+.welcome-heading {
+  margin-bottom: 8px;
+}
+
+.welcome-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.welcome-subtitle {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.welcome-error {
+  margin-top: 12px;
+  color: var(--notification);
+  font-size: 13px;
+}
+
 .host-submitted {
   padding-bottom: 4px;
 }

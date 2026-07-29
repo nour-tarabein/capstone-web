@@ -147,6 +147,24 @@ describe('mockRepository', () => {
       expect(austinPending.some((e) => e.title === 'Placeholder Submission')).toBe(false)
     })
 
+    it('createAttendee scopes the new attendee to the given conference', async () => {
+      const repo = createMockRepository()
+
+      const created = await repo.createAttendee(TYSONS, {
+        name: 'Jamie Rivera',
+        company: 'Technology',
+      })
+      expect(created.conferenceId).toBe(TYSONS)
+
+      // The new attendee actually landed in the Tysons bundle (not just a
+      // conferenceId label on a detached object): RSVP them to a Tysons event
+      // and confirm getAttendingList can resolve them as the viewer, which
+      // only works by reading them out of that bundle's attendeesById.
+      await repo.rsvp(TYSONS, TYSONS_OPENING_RECEPTION, created.id, false)
+      const attending = await repo.getAttendingList(TYSONS, TYSONS_OPENING_RECEPTION, created.id)
+      expect(attending.gated).toBe(false)
+    })
+
     it('getViewer resolves the roster for the given conference only', async () => {
       const repo = createMockRepository()
 

@@ -14,17 +14,33 @@ import { MoreScreen } from './screens/More';
 import { MyEventScreen } from './screens/MyEvent';
 import { MapScreen } from './screens/MapScreen';
 import { ReviewQueueScreen } from './screens/ReviewQueue';
+import { WelcomeScreen } from './screens/Welcome';
 import { OverlayHost } from './overlays';
 import { Toaster } from './ui/toast';
+import { getActiveConferenceId, subscribeToActiveConference } from './offsite/activeConference';
+import { tysonsConference } from './offsite/fixtures/conference';
+import { hasCheckedIn } from './offsite/checkinStorage';
 
 /**
  * Hash-based routing so the browser back button works on the overlay screens
  * (map, review queue) — on a phone that back gesture is muscle memory, and a
  * purely state-based overlay would make it close the whole site instead.
  */
-type Route = 'tabs' | 'map' | 'review';
+type Route = 'tabs' | 'map' | 'review' | 'welcome';
+
+/**
+ * Tysons Corner's first-run gate (issue #5): a browser that hasn't checked in
+ * yet always lands on the welcome screen, regardless of what hash it asks
+ * for — this is what makes it a real gate rather than a suggestion the
+ * address bar can bypass. Austin never shows it; today's default persona
+ * keeps landing on the tab stack unchanged.
+ */
+function needsWelcome(): boolean {
+  return getActiveConferenceId() === tysonsConference.id && !hasCheckedIn(tysonsConference.id);
+}
 
 function parseRoute(): Route {
+  if (needsWelcome()) return 'welcome';
   const hash = window.location.hash;
   if (hash.startsWith('#/map')) return 'map';
   if (hash.startsWith('#/review')) return 'review';
@@ -71,9 +87,21 @@ export function App() {
 
   useEffect(() => {
     switchTab = setTab;
-    const onHash = () => setRoute(parseRoute());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    // Cosmetic: keep the address bar honest about the gate ("a new hash
+    // route") even though parseRoute() enforces it independent of the hash.
+    if (route === 'welcome' && !window.location.hash.startsWith('#/welcome')) {
+      window.location.hash = '/welcome';
+    }
+    const onRouteInputChange = () => setRoute(parseRoute());
+    window.addEventListener('hashchange', onRouteInputChange);
+    // The city switcher in More (issue #4) can flip the active conference to
+    // Tysons mid-session, with no hashchange involved — without this the
+    // welcome gate would only catch it on the next reload.
+    const unsubscribe = subscribeToActiveConference(onRouteInputChange);
+    return () => {
+      window.removeEventListener('hashchange', onRouteInputChange);
+      unsubscribe();
+    };
   }, []);
 
   return (
@@ -120,6 +148,11 @@ export function App() {
       {route === 'review' ? (
         <div className="route-layer">
           <ReviewQueueScreen />
+        </div>
+      ) : null}
+      {route === 'welcome' ? (
+        <div className="route-layer">
+          <WelcomeScreen />
         </div>
       ) : null}
 

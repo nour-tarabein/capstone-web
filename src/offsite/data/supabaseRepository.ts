@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type {
+  AttendeeDraft,
   AttendingList,
   Attendee,
   Conference,
@@ -61,6 +62,20 @@ export function createSupabaseRepository(): Repository {
       const local = conferenceId === fixtureConference.id ? attendeesById.get(id) : undefined
       if (local) return local
       throw error ?? new Error(`Viewer ${id} not found in conference ${conferenceId}`)
+    },
+
+    // SECURITY DEFINER, same reasoning as event_submit: anon has no INSERT on
+    // attendees, and this is the one write that manufactures an attendeeId
+    // rather than acting on behalf of an existing one (issue #5).
+    async createAttendee(conferenceId: string, draft: AttendeeDraft): Promise<Attendee> {
+      const { data } = unwrap(
+        await client.rpc('attendee_checkin', {
+          p_conference_id: conferenceId,
+          p_name: draft.name,
+          p_company: draft.company,
+        }),
+      )
+      return toAttendee(data)
     },
 
     async listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]> {

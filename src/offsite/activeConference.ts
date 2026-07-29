@@ -13,7 +13,8 @@ import { conferencesById, tysonsConference } from './fixtures/conference';
  * Switched from a control in More, near "Exit event" (issue #4). Every screen
  * that shows conference-scoped data — the map's venue, the attendee roster,
  * session-matching, and More's Location card — reads the active conference id
- * from here instead of importing a fixture directly.
+ * from here instead of importing a fixture directly. App.tsx also reads it to
+ * gate the Tysons Corner welcome/check-in screen (issue #5).
  */
 const STORAGE_KEY = 'lts-active-conference-id-v1';
 const DEFAULT_CONFERENCE_ID = tysonsConference.id;

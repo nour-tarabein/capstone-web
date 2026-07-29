@@ -115,6 +115,18 @@ export interface Attendee {
   directoryOptIn: boolean
 }
 
+/**
+ * What the Tysons Corner welcome/check-in screen collects to manufacture a
+ * brand-new attendee for a browser with no existing identity (issue #5).
+ * Everything else on Attendee — id, title, photo, interests, session ids,
+ * directory opt-in — is assigned server-side / in the mock bundle, mirroring
+ * EventDraft.
+ */
+export interface AttendeeDraft {
+  name: string
+  company: string
+}
+
 export interface Rsvp {
   id: string
   eventId: string

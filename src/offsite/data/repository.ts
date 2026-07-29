@@ -1,4 +1,5 @@
 import type {
+  AttendeeDraft,
   AttendingList,
   Attendee,
   Conference,
@@ -28,6 +29,13 @@ import type {
 export interface Repository {
   getConference(conferenceId: string): Promise<Conference>
   getViewer(conferenceId: string): Promise<Attendee>
+
+  /**
+   * Manufactures a brand-new attendee scoped to `conferenceId` (issue #5 — the
+   * Tysons Corner welcome/check-in screen). Unlike every other write, the
+   * caller has no existing attendeeId yet: this is what creates one.
+   */
+  createAttendee(conferenceId: string, draft: AttendeeDraft): Promise<Attendee>
 
   /** Approved events for one night. The night selector is a hard filter (DESIGN.md #7). */
   listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]>
