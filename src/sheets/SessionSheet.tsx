@@ -5,8 +5,8 @@ import {
   mdiCalendarPlus,
   mdiMapMarkerOutline,
 } from '@mdi/js';
-import { useViewerId } from '../offsite/persona';
 import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { initials } from '../offsite/format';
 import {
   sessionDescriptions,
@@ -20,7 +20,7 @@ import { Icon } from '../icons';
 import { colors } from '../theme';
 
 export function SessionSheet({ sessionId }: { sessionId: string }) {
-  const viewerId = useViewerId();
+  const viewerId = useViewer().id;
   useScheduleVersion();
   const { attendees } = useActiveRoster();
 
