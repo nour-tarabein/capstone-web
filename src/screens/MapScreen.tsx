@@ -6,7 +6,7 @@ import { EventSheet } from '../components/EventSheet';
 import { HostSheet } from '../components/HostSheet';
 import { SourceBadge } from '../components/SourceBadge';
 import type { Conference, OffsiteEvent } from '../offsite/domain/types';
-import { repository } from '../offsite/data';
+import { getRepository } from '../offsite/data';
 import { useActiveConferenceId } from '../offsite/activeConference';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { milesBetween } from '../offsite/ingestion/curate';
@@ -59,7 +59,7 @@ export function MapScreen() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    void repository.getConference(activeConferenceId).then(
+    void getRepository(activeConferenceId).getConference(activeConferenceId).then(
       (c) => {
         setConference(c);
         setNight(defaultNight(c.nights));
@@ -71,10 +71,11 @@ export function MapScreen() {
   const loadNight = useCallback(async () => {
     if (!night) return;
     try {
-      const list = await repository.listEventsForNight(activeConferenceId, night);
+      const repo = getRepository(activeConferenceId);
+      const list = await repo.listEventsForNight(activeConferenceId, night);
       setEvents(list);
       setGoingCounts(
-        await repository.getGoingCounts(
+        await repo.getGoingCounts(
           activeConferenceId,
           list.map((e) => e.id),
         ),

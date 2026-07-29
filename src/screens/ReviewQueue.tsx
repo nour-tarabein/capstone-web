@@ -9,7 +9,7 @@ import {
 import { goBack } from '../App';
 import { SourceBadge } from '../components/SourceBadge';
 import type { PendingEvent } from '../offsite/domain/types';
-import { repository } from '../offsite/data';
+import { getRepository } from '../offsite/data';
 import { useActiveConferenceId } from '../offsite/activeConference';
 import { formatTime } from '../offsite/format';
 import { nightLabels } from '../offsite/fixtures/conference';
@@ -29,7 +29,7 @@ export function ReviewQueueScreen() {
   const activeConferenceId = useActiveConferenceId();
 
   const load = useCallback(async () => {
-    setPending(await repository.listPendingEvents(activeConferenceId));
+    setPending(await getRepository(activeConferenceId).listPendingEvents(activeConferenceId));
   }, [activeConferenceId]);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function ReviewQueueScreen() {
   async function review(event: PendingEvent, status: 'approved' | 'rejected') {
     setBusyId(event.id);
     try {
-      await repository.reviewEvent(activeConferenceId, event.id, status);
+      await getRepository(activeConferenceId).reviewEvent(activeConferenceId, event.id, status);
       setDecided((prev) => ({ ...prev, [event.id]: status }));
     } finally {
       setBusyId(null);

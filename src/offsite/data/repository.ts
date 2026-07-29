@@ -37,6 +37,15 @@ export interface Repository {
    */
   createAttendee(conferenceId: string, draft: AttendeeDraft): Promise<Attendee>
 
+  /**
+   * The opted-in roster for one conference (issue #7) — People/Attendees,
+   * Search, and session-matching all read through here rather than a static
+   * fixture, so a conference running on the live backend shows attendees who
+   * checked in on someone else's phone. Directory opt-out is enforced the
+   * same way as everywhere else: a live read only ever returns opted-in rows.
+   */
+  listRoster(conferenceId: string): Promise<Attendee[]>
+
   /** Approved events for one night. The night selector is a hard filter (DESIGN.md #7). */
   listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]>
   getEvent(conferenceId: string, eventId: string): Promise<OffsiteEvent | null>

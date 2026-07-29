@@ -165,6 +165,22 @@ describe('mockRepository', () => {
       expect(attending.gated).toBe(false)
     })
 
+    it('listRoster scopes to the given conference and includes newly checked-in attendees', async () => {
+      const repo = createMockRepository()
+
+      const austinRoster = await repo.listRoster(AUSTIN)
+      expect(austinRoster.length).toBeGreaterThan(0)
+      expect(austinRoster.every((a) => a.conferenceId === AUSTIN)).toBe(true)
+
+      const created = await repo.createAttendee(TYSONS, {
+        name: 'Jamie Rivera',
+        company: 'Technology',
+      })
+      const tysonsRoster = await repo.listRoster(TYSONS)
+      expect(tysonsRoster.some((a) => a.id === created.id)).toBe(true)
+      expect(austinRoster.some((a) => a.id === created.id)).toBe(false)
+    })
+
     it('getViewer resolves the roster for the given conference only', async () => {
       const repo = createMockRepository()
 

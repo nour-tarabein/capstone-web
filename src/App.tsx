@@ -20,6 +20,7 @@ import { Toaster } from './ui/toast';
 import { getActiveConferenceId, subscribeToActiveConference } from './offsite/activeConference';
 import { tysonsConference } from './offsite/fixtures/conference';
 import { hasCheckedIn } from './offsite/checkinStorage';
+import { useLiveRosterSync } from './offsite/data';
 
 /**
  * Hash-based routing so the browser back button works on the overlay screens
@@ -84,6 +85,11 @@ const TABS: Array<{ id: TabId; icon: string; label: string; dot?: boolean }> = [
 export function App() {
   const [route, setRoute] = useState<Route>(parseRoute);
   const [tab, setTab] = useState<TabId>('home');
+
+  // Keeps roster.ts's cache warm for the active conference (issue #7) — one
+  // subscription for the whole app rather than every roster-reading screen
+  // fetching for itself.
+  useLiveRosterSync();
 
   useEffect(() => {
     switchTab = setTab;
