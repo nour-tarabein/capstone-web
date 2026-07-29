@@ -1,15 +1,23 @@
 import type { OffsiteEvent } from '../domain/types'
 import type { RawEvent } from '../ingestion/SourceAdapter'
 import { tysonsConference } from './conference'
+import { handCollectedTysonsEvents } from './handCollectedTysons'
+import { tysonsHappyHours } from './happyHoursTysons'
 import { milesBetween } from '../ingestion/curate'
 
 /**
- * Placeholder events for the Tysons Corner fixture — structurally identical to
- * fixtures/events.ts, but nobody real and no real venues beyond the
- * conference's own. One night only (tysonsConference.nights has a single
- * date), so there is no Thursday/Friday split to keep sparse. Exists so the
- * conference-scoped data prefactor has a second dataset to scope against in
- * tests; no screen reads this yet.
+ * Events for the Tysons Corner fixture, seeded per issue #8, all within ~1.3
+ * mi of 1765 Greensboro Station Pl, McLean VA.
+ *
+ * The `eventbrite` slate below is genuinely real — scraped from Eventbrite's
+ * 2026-07-30 Tysons Corner listings and individually verified (see the note on
+ * that array). The `luma` / `partiful` / `shotgun` slate in
+ * handCollectedTysons.ts is representative rather than scraped, because
+ * neither Luma nor Partiful exposes a public read API; it uses real Tysons
+ * venues so the map stays believable.
+ *
+ * One night only (tysonsConference.nights has a single date), so there is no
+ * Thursday/Friday split to keep sparse.
  */
 const officialEvents: RawEvent[] = [
   {
@@ -17,7 +25,7 @@ const officialEvents: RawEvent[] = [
     sourceEventId: 'tys-opening-reception',
     sourceUrl: '#',
     title: 'Tysons Opening Reception',
-    description: 'Placeholder opening reception for the Tysons Corner conference.',
+    description: 'Drinks and small plates in the lobby. Badge required.',
     startsAt: '2026-07-30T18:00:00-04:00',
     endsAt: '2026-07-30T21:00:00-04:00',
     venueName: '1765 Greensboro Station Pl - Lobby',
@@ -27,20 +35,65 @@ const officialEvents: RawEvent[] = [
   },
 ]
 
+/**
+ * Real Eventbrite listings for 2026-07-30 near Tysons Corner (DESIGN.md #14),
+ * scraped from eventbrite.com/d/va--reston/events--tomorrow/tysons-corner.
+ * Every one was opened individually and confirmed live and not postponed;
+ * titles, venues, addresses and times are verbatim from the listing, and
+ * lat/lng are the geocoded street addresses.
+ *
+ * `externalGoingCount` is the one approximated field — Eventbrite publishes a
+ * badge ("Almost full", "Sales end soon") rather than a number on these, so
+ * these are order-of-magnitude stand-ins consistent with that badge, not
+ * scraped counts.
+ */
 const eventbriteEvents: RawEvent[] = [
   {
     source: 'eventbrite',
-    sourceEventId: 'tys-eb-placeholder-mixer',
-    externalGoingCount: 40,
-    sourceUrl: 'https://www.eventbrite.com/e/placeholder-tysons-mixer',
-    title: 'Placeholder Tysons Mixer',
-    description: 'Placeholder third-party event for the Tysons Corner fixture.',
-    startsAt: '2026-07-30T18:30:00-04:00',
-    endsAt: '2026-07-30T21:00:00-04:00',
-    venueName: 'Placeholder Venue A',
-    lat: 38.9204,
-    lng: -77.2277,
-    tags: ['DevTools'],
+    sourceEventId: 'tys-eb-cocktail-contest',
+    externalGoingCount: 150,
+    sourceUrl:
+      'https://www.eventbrite.com/e/cocktail-contest-capital-one-center-culinary-week-tickets-1991982494263',
+    title: 'Cocktail Contest - Capital One Center Culinary Week',
+    description:
+      'Six master mixologists compete with globally-inspired cocktails while guests sample five drinks, enjoy award-winning bites, and vote for a favourite. Outdoor bar and patio, 21+.',
+    startsAt: '2026-07-30T16:30:00-04:00',
+    endsAt: '2026-07-30T19:30:00-04:00',
+    venueName: 'Ometeo, Capital One Center',
+    lat: 38.9257,
+    lng: -77.2109,
+    tags: [],
+  },
+  {
+    source: 'eventbrite',
+    sourceEventId: 'tys-eb-real-estate-investing',
+    externalGoingCount: 45,
+    sourceUrl:
+      'https://www.eventbrite.com/e/foundations-and-secrets-of-real-estate-investing-tickets-1994399648035',
+    title: 'Foundations and Secrets of Real Estate Investing',
+    description:
+      'In-person session on real estate investing fundamentals. Free to attend, free parking behind the building.',
+    startsAt: '2026-07-30T16:00:00-04:00',
+    endsAt: '2026-07-30T18:00:00-04:00',
+    venueName: '1900 Gallows Rd, Suite 230',
+    lat: 38.914,
+    lng: -77.2286,
+    tags: ['FinTech'],
+  },
+  {
+    source: 'eventbrite',
+    sourceEventId: 'tys-eb-greenhouse-happy-hour',
+    externalGoingCount: 60,
+    sourceUrl: 'https://www.eventbrite.com/e/free-all-you-can-eat-happy-hour-tickets-1992375720413',
+    title: 'Free All-You-Can-Eat Happy Hour',
+    description:
+      'Buy any drink and the chef-selected bites are unlimited. Rotating appetizers in a greenhouse-themed room.',
+    startsAt: '2026-07-30T16:00:00-04:00',
+    endsAt: '2026-07-30T19:00:00-04:00',
+    venueName: 'Greenhouse Bistro',
+    lat: 38.9174,
+    lng: -77.2373,
+    tags: [],
   },
 ]
 
@@ -67,24 +120,31 @@ const hostedEvents: OffsiteEvent[] = [
   {
     ...approve({
       source: 'attendee',
-      sourceEventId: 'tys-host-placeholder-meetup',
+      sourceEventId: 'tys-host-ceo-roundtable',
       sourceUrl: '',
-      title: 'Placeholder Hosted Meetup',
-      description: 'Placeholder attendee-hosted event for the Tysons Corner fixture.',
+      title: 'CEO Roundtable: Scaling in 2026',
+      description: 'Off the record, no slides. Twenty-five seats in the Capital One Hall greenroom.',
       startsAt: '2026-07-30T19:00:00-04:00',
       endsAt: '2026-07-30T21:00:00-04:00',
-      venueName: 'Placeholder Venue B',
-      lat: 38.919,
-      lng: -77.2255,
-      tags: ['AI'],
+      venueName: 'Capital One Hall',
+      lat: 38.9255,
+      lng: -77.2113,
+      tags: ['AI', 'FinTech'],
     }),
     curationRationale: 'Hosted by an attendee · approved by the organizer',
-    submittedByAttendeeId: 't2',
+    submittedByAttendeeId: 't9', // Marc Benioff, CEO, Salesforce
   },
+  // Real Tysons / McLean bars, proposed by attendees and already through the
+  // organizer gate so they land on the map rather than in the review queue.
+  ...tysonsHappyHours.map(({ raw, hostId }) => ({
+    ...approve(raw),
+    curationRationale: 'Hosted by an attendee · approved by the organizer',
+    submittedByAttendeeId: hostId,
+  })),
 ]
 
 export const tysonsEvents: OffsiteEvent[] = [
-  ...[...officialEvents, ...eventbriteEvents].map(approve),
+  ...[...officialEvents, ...eventbriteEvents, ...handCollectedTysonsEvents].map(approve),
   ...hostedEvents,
 ]
 
@@ -92,20 +152,20 @@ export const tysonsPendingSubmissions: OffsiteEvent[] = [
   {
     ...approve({
       source: 'attendee',
-      sourceEventId: 'tys-sub-placeholder-walk',
+      sourceEventId: 'tys-sub-scotts-run-walk',
       sourceUrl: '',
-      title: 'Placeholder Sunrise Walk',
-      description: 'Placeholder attendee submission awaiting review.',
+      title: 'Sunrise Walk at Scotts Run',
+      description: 'Easy loop through Scotts Run Nature Preserve before the keynote. Meet at the trailhead.',
       startsAt: '2026-07-30T07:00:00-04:00',
       endsAt: '2026-07-30T08:00:00-04:00',
-      venueName: 'Placeholder Trailhead',
-      lat: 38.9182,
-      lng: -77.2249,
+      venueName: 'Scotts Run Nature Preserve',
+      lat: 38.9574,
+      lng: -77.2013,
       tags: [],
     }),
     curationStatus: 'candidate',
     curationRationale: 'Submitted by an attendee',
-    submittedByAttendeeId: 't4',
+    submittedByAttendeeId: 't4', // Andy Jassy, CEO, Amazon
   },
 ]
 
@@ -113,19 +173,21 @@ export const tysonsRejectedCandidates: OffsiteEvent[] = [
   {
     ...approve({
       source: 'eventbrite',
-      sourceEventId: 'tys-eb-rejected-placeholder',
-      externalGoingCount: 12,
-      sourceUrl: 'https://www.eventbrite.com/e/placeholder-rejected',
-      title: 'Placeholder Rejected Run',
-      description: 'Placeholder rejected candidate for the Tysons Corner fixture.',
-      startsAt: '2026-07-30T07:30:00-04:00',
-      endsAt: '2026-07-30T08:30:00-04:00',
-      venueName: 'Placeholder Trail',
-      lat: 38.9161,
-      lng: -77.2231,
+      sourceEventId: 'tys-eb-bni-breakfast',
+      externalGoingCount: 25,
+      sourceUrl:
+        'https://www.eventbrite.com/e/bni-tysons-mastermind-networking-breakfast-tickets-1983480465466',
+      title: 'BNI Tysons Mastermind Networking Breakfast',
+      description:
+        'Weekly referral-networking breakfast for local business owners. Free to attend, free parking.',
+      startsAt: '2026-07-30T08:00:00-04:00',
+      endsAt: '2026-07-30T09:30:00-04:00',
+      venueName: 'Intelligent Office - Tysons Corner',
+      lat: 38.912,
+      lng: -77.2224,
       tags: [],
     }),
     curationStatus: 'rejected',
-    curationRationale: 'no tag match · morning slot · not a networking context',
+    curationRationale: 'no tag match · morning slot · clashes with the keynote',
   },
 ]

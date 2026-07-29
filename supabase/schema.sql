@@ -42,7 +42,7 @@ begin
     where pronamespace = 'public'::regnamespace
       and proname in (
         'going_counts', 'attending_list', 'rsvp_create', 'rsvp_cancel',
-        'event_submit', 'pending_events', 'event_review', 'attendee_checkin'
+        'event_submit', 'pending_events', 'event_review'
       )
   loop
     execute format('drop function if exists %s cascade', fn.sig);
@@ -269,28 +269,6 @@ begin
 end;
 $$;
 
--- Manufactures a brand-new attendee for a browser that has no identity yet —
--- the Tysons Corner welcome/check-in screen (issue #5). anon has no INSERT on
--- attendees (no policy grants it), so this has to run SECURITY DEFINER, same
--- as event_submit. Returns the inserted row so the client can adopt its id as
--- the viewer persona without a second round trip.
-create or replace function attendee_checkin(p_conference_id text, p_name text, p_company text)
-returns jsonb
-language plpgsql security definer set search_path = public
-as $$
-declare
-  v_row attendees;
-begin
-  insert into attendees (id, conference_id, name, title, company, photo_url, interests, session_ids, directory_opt_in)
-  values (
-    'checkin:' || replace(gen_random_uuid()::text, '-', ''),
-    p_conference_id, trim(p_name), '', coalesce(p_company, ''), '', '{}', '{}', true
-  )
-  returning * into v_row;
-  return to_jsonb(v_row);
-end;
-$$;
-
 -- The organizer review queue cannot be a plain SELECT: the rows it needs are
 -- exactly the ones events_read hides. SECURITY DEFINER, joined to the submitter
 -- so the queue can name the host without a second round trip. Scoped to one
@@ -327,7 +305,6 @@ grant execute on function rsvp_cancel(text, text, text)                         
 grant execute on function event_submit(text, text, text, timestamptz, text, double precision, double precision, text) to anon, authenticated;
 grant execute on function pending_events(text)                                                                 to anon, authenticated;
 grant execute on function event_review(text, text, text)                                                       to anon, authenticated;
-grant execute on function attendee_checkin(text, text, text)                                                   to anon, authenticated;
 
 -- ============================================================
 -- SEED DATA  (generated from src/offsite/fixtures — do not edit by hand)
@@ -335,7 +312,7 @@ grant execute on function attendee_checkin(text, text, text)                    
 
 insert into conferences (id, name, city, venue_name, venue_lat, venue_lng, nights, topic_tags) values
   ('lts-2026', 'Lonestar Tech Summit 2026', 'Austin, TX', 'Austin Convention Center', 30.2637, -97.7397, ARRAY['2026-07-30','2026-07-31']::text[], ARRAY['AI','FinTech','DevTools','Design','Climate']::text[]),
-  ('lts-tysons-2026', 'Lonestar Tech Summit 2026', 'McLean, VA', '1765 Greensboro Station Pl, 7th Floor', 38.9196, -77.2264, ARRAY['2026-07-30']::text[], ARRAY['AI','FinTech','DevTools','Design','Climate']::text[]);
+  ('lts-tysons-2026', 'Lonestar Tech Summit 2026', 'McLean, VA', '1765 Greensboro Station Pl, 7th Floor', 38.9221, -77.2332, ARRAY['2026-07-30']::text[], ARRAY['AI','FinTech','DevTools','Design','Climate']::text[]);
 
 insert into attendees (id, conference_id, name, title, company, photo_url, interests, session_ids, directory_opt_in) values
   ('a1', 'lts-2026', 'Reggie Aggarwal', 'CEO', 'Finance', '', ARRAY['FinTech','AI']::text[], ARRAY['s1','s4']::text[], true),
@@ -401,12 +378,61 @@ insert into attendees (id, conference_id, name, title, company, photo_url, inter
   ('a61', 'lts-2026', 'Sherry Chen', 'Product Design Intern', 'Technology', '', ARRAY['Design']::text[], ARRAY['s2','s7']::text[], true),
   ('a62', 'lts-2026', 'Shritan Goki', 'Software Engineering Intern', 'Technology', '', ARRAY['DevTools','AI']::text[], ARRAY['s1','s5']::text[], true),
   ('a63', 'lts-2026', 'Zaylie Tamashiro', 'Software Engineering Intern', 'Technology', '', ARRAY['DevTools']::text[], ARRAY['s3','s5']::text[], true),
-  ('t1', 'lts-tysons-2026', 'Placeholder Attendee One', 'Organizer', 'Operations', '', ARRAY['AI','FinTech']::text[], ARRAY['s1']::text[], true),
-  ('t2', 'lts-tysons-2026', 'Placeholder Attendee Two', 'Engineer', 'Technology', '', ARRAY['DevTools','AI']::text[], ARRAY['s3']::text[], true),
-  ('t3', 'lts-tysons-2026', 'Placeholder Attendee Three', 'Designer', 'Design', '', ARRAY['Design']::text[], ARRAY['s2']::text[], true),
-  ('t4', 'lts-tysons-2026', 'Placeholder Attendee Four', 'Analyst', 'Finance', '', ARRAY['FinTech']::text[], ARRAY['s4']::text[], true),
-  ('t5', 'lts-tysons-2026', 'Placeholder Attendee Five', 'Engineer', 'Technology', '', ARRAY['DevTools']::text[], ARRAY['s3']::text[], true),
-  ('t6', 'lts-tysons-2026', 'Placeholder Attendee Six', 'Coordinator', 'Marketing', '', ARRAY['Design','Climate']::text[], ARRAY['s6']::text[], true);
+  ('t1', 'lts-tysons-2026', 'Tim Cook', 'CEO', 'Apple', '', ARRAY['AI','DevTools']::text[], ARRAY['s1','s9']::text[], true),
+  ('t2', 'lts-tysons-2026', 'Satya Nadella', 'CEO', 'Microsoft', '', ARRAY['AI','DevTools']::text[], ARRAY['s1','s5']::text[], true),
+  ('t3', 'lts-tysons-2026', 'Sundar Pichai', 'CEO', 'Alphabet', '', ARRAY['AI','DevTools']::text[], ARRAY['s1','s9']::text[], true),
+  ('t4', 'lts-tysons-2026', 'Andy Jassy', 'CEO', 'Amazon', '', ARRAY['DevTools','AI']::text[], ARRAY['s5','s10']::text[], true),
+  ('t5', 'lts-tysons-2026', 'Mark Zuckerberg', 'CEO', 'Meta', '', ARRAY['AI','Design']::text[], ARRAY['s9','s2']::text[], true),
+  ('t6', 'lts-tysons-2026', 'Jensen Huang', 'CEO', 'NVIDIA', '', ARRAY['AI','DevTools']::text[], ARRAY['s1','s9']::text[], true),
+  ('t7', 'lts-tysons-2026', 'Elon Musk', 'CEO', 'Tesla', '', ARRAY['AI','Climate']::text[], ARRAY['s9','s6']::text[], true),
+  ('t8', 'lts-tysons-2026', 'Sam Altman', 'CEO', 'OpenAI', '', ARRAY['AI']::text[], ARRAY['s9','s1']::text[], true),
+  ('t9', 'lts-tysons-2026', 'Marc Benioff', 'CEO', 'Salesforce', '', ARRAY['AI','DevTools']::text[], ARRAY['s3','s5']::text[], true),
+  ('t10', 'lts-tysons-2026', 'Arvind Krishna', 'CEO', 'IBM', '', ARRAY['AI','DevTools']::text[], ARRAY['s5','s10']::text[], true),
+  ('t11', 'lts-tysons-2026', 'Shantanu Narayen', 'CEO', 'Adobe', '', ARRAY['Design','AI']::text[], ARRAY['s2','s7']::text[], true),
+  ('t12', 'lts-tysons-2026', 'Safra Catz', 'CEO', 'Oracle', '', ARRAY['FinTech','DevTools']::text[], ARRAY['s4','s5']::text[], true),
+  ('t13', 'lts-tysons-2026', 'Lisa Su', 'CEO', 'AMD', '', ARRAY['AI','DevTools']::text[], ARRAY['s1','s3']::text[], true),
+  ('t14', 'lts-tysons-2026', 'Dara Khosrowshahi', 'CEO', 'Uber', '', ARRAY['AI','DevTools']::text[], ARRAY['s5','s10']::text[], true),
+  ('t15', 'lts-tysons-2026', 'Brian Chesky', 'CEO', 'Airbnb', '', ARRAY['Design','AI']::text[], ARRAY['s2','s7']::text[], true),
+  ('t16', 'lts-tysons-2026', 'Evan Spiegel', 'CEO', 'Snap', '', ARRAY['Design','AI']::text[], ARRAY['s2','s9']::text[], true),
+  ('t17', 'lts-tysons-2026', 'Daniel Ek', 'CEO', 'Spotify', '', ARRAY['AI','Design']::text[], ARRAY['s9','s2']::text[], true),
+  ('t18', 'lts-tysons-2026', 'Melanie Perkins', 'CEO', 'Canva', '', ARRAY['Design']::text[], ARRAY['s2','s7']::text[], true),
+  ('t19', 'lts-tysons-2026', 'Tim Sweeney', 'CEO', 'Epic Games', '', ARRAY['DevTools','AI']::text[], ARRAY['s3','s9']::text[], true),
+  ('t20', 'lts-tysons-2026', 'Michael Dell', 'Chairman and CEO', 'Dell Technologies', '', ARRAY['DevTools','AI']::text[], ARRAY['s5','s10']::text[], true),
+  ('t21', 'lts-tysons-2026', 'Ted Sarandos', 'Co-CEO', 'Netflix', '', ARRAY['Design']::text[], ARRAY['s2','s7']::text[], true),
+  ('t22', 'lts-tysons-2026', 'Bob Iger', 'CEO', 'The Walt Disney Company', '', ARRAY['Design']::text[], ARRAY['s2','s7']::text[], true),
+  ('t23', 'lts-tysons-2026', 'David Zaslav', 'CEO', 'Warner Bros. Discovery', '', ARRAY['Design']::text[], ARRAY['s7','s2']::text[], true),
+  ('t24', 'lts-tysons-2026', 'Mary Barra', 'Chair and CEO', 'General Motors', '', ARRAY['Climate','DevTools']::text[], ARRAY['s6','s5']::text[], true),
+  ('t25', 'lts-tysons-2026', 'Jim Farley', 'CEO', 'Ford Motor Company', '', ARRAY['Climate','DevTools']::text[], ARRAY['s6','s5']::text[], true),
+  ('t26', 'lts-tysons-2026', 'Jamie Dimon', 'Chairman and CEO', 'JPMorgan Chase', '', ARRAY['FinTech']::text[], ARRAY['s4','s10']::text[], true),
+  ('t27', 'lts-tysons-2026', 'Jane Fraser', 'CEO', 'Citigroup', '', ARRAY['FinTech']::text[], ARRAY['s4']::text[], true),
+  ('t28', 'lts-tysons-2026', 'Brian Moynihan', 'Chairman and CEO', 'Bank of America', '', ARRAY['FinTech']::text[], ARRAY['s4']::text[], true),
+  ('t29', 'lts-tysons-2026', 'David Solomon', 'Chairman and CEO', 'Goldman Sachs', '', ARRAY['FinTech']::text[], ARRAY['s4','s9']::text[], true),
+  ('t30', 'lts-tysons-2026', 'Charlie Scharf', 'CEO', 'Wells Fargo', '', ARRAY['FinTech']::text[], ARRAY['s4']::text[], true),
+  ('t31', 'lts-tysons-2026', 'Larry Fink', 'Chairman and CEO', 'BlackRock', '', ARRAY['FinTech','Climate']::text[], ARRAY['s4','s6']::text[], true),
+  ('t32', 'lts-tysons-2026', 'Warren Buffett', 'CEO', 'Berkshire Hathaway', '', ARRAY['FinTech']::text[], ARRAY['s4']::text[], true),
+  ('t33', 'lts-tysons-2026', 'Doug McMillon', 'President and CEO', 'Walmart', '', ARRAY['DevTools','FinTech']::text[], ARRAY['s5','s4']::text[], true),
+  ('t34', 'lts-tysons-2026', 'Brian Cornell', 'Chair and CEO', 'Target', '', ARRAY['Design','FinTech']::text[], ARRAY['s2','s4']::text[], true),
+  ('t35', 'lts-tysons-2026', 'Corie Barry', 'CEO', 'Best Buy', '', ARRAY['DevTools','Design']::text[], ARRAY['s3','s2']::text[], true),
+  ('t36', 'lts-tysons-2026', 'Marvin Ellison', 'Chairman and CEO', 'Lowe''s', '', ARRAY['DevTools']::text[], ARRAY['s5']::text[], true),
+  ('t37', 'lts-tysons-2026', 'Ted Decker', 'Chair and CEO', 'The Home Depot', '', ARRAY['DevTools']::text[], ARRAY['s5','s3']::text[], true),
+  ('t38', 'lts-tysons-2026', 'Darren Woods', 'Chairman and CEO', 'ExxonMobil', '', ARRAY['Climate']::text[], ARRAY['s6']::text[], true),
+  ('t39', 'lts-tysons-2026', 'Mike Wirth', 'Chairman and CEO', 'Chevron', '', ARRAY['Climate']::text[], ARRAY['s6']::text[], true),
+  ('t40', 'lts-tysons-2026', 'Vicki Hollub', 'President and CEO', 'Occidental Petroleum', '', ARRAY['Climate']::text[], ARRAY['s6','s9']::text[], true),
+  ('t41', 'lts-tysons-2026', 'Albert Bourla', 'Chairman and CEO', 'Pfizer', '', ARRAY['AI','FinTech']::text[], ARRAY['s9','s4']::text[], true),
+  ('t42', 'lts-tysons-2026', 'David Ricks', 'Chairman and CEO', 'Eli Lilly and Company', '', ARRAY['AI','FinTech']::text[], ARRAY['s9','s4']::text[], true),
+  ('t43', 'lts-tysons-2026', 'Joaquin Duato', 'Chairman and CEO', 'Johnson & Johnson', '', ARRAY['AI','Design']::text[], ARRAY['s9','s2']::text[], true),
+  ('t44', 'lts-tysons-2026', 'Karen Lynch', 'President and CEO', 'CVS Health', '', ARRAY['FinTech','AI']::text[], ARRAY['s4','s9']::text[], true),
+  ('t45', 'lts-tysons-2026', 'Andrew Witty', 'CEO', 'UnitedHealth Group', '', ARRAY['FinTech','AI']::text[], ARRAY['s4','s10']::text[], true),
+  ('t46', 'lts-tysons-2026', 'James Quincey', 'Chairman and CEO', 'The Coca-Cola Company', '', ARRAY['Design','Climate']::text[], ARRAY['s2','s6']::text[], true),
+  ('t47', 'lts-tysons-2026', 'Ramon Laguarta', 'Chairman and CEO', 'PepsiCo', '', ARRAY['Design','Climate']::text[], ARRAY['s2','s6']::text[], true),
+  ('t48', 'lts-tysons-2026', 'Brian Niccol', 'Chairman and CEO', 'Starbucks', '', ARRAY['Design']::text[], ARRAY['s2','s7']::text[], true),
+  ('t49', 'lts-tysons-2026', 'Chris Kempczinski', 'Chairman and CEO', 'McDonald''s', '', ARRAY['Design','DevTools']::text[], ARRAY['s2','s3']::text[], true),
+  ('t50', 'lts-tysons-2026', 'Kelly Ortberg', 'President and CEO', 'Boeing', '', ARRAY['DevTools','AI']::text[], ARRAY['s5','s9']::text[], true),
+  ('t51', 'lts-tysons-2026', 'Jim Taiclet', 'Chairman and CEO', 'Lockheed Martin', '', ARRAY['AI','DevTools']::text[], ARRAY['s9','s5']::text[], true),
+  ('t52', 'lts-tysons-2026', 'Hans Vestberg', 'Chairman and CEO', 'Verizon', '', ARRAY['DevTools','AI']::text[], ARRAY['s3','s9']::text[], true),
+  ('t53', 'lts-tysons-2026', 'John Stankey', 'Chairman and CEO', 'AT&T', '', ARRAY['DevTools']::text[], ARRAY['s3','s10']::text[], true),
+  ('t54', 'lts-tysons-2026', 'Ed Bastian', 'CEO', 'Delta Air Lines', '', ARRAY['Climate','Design']::text[], ARRAY['s6','s2']::text[], true),
+  ('t55', 'lts-tysons-2026', 'Scott Kirby', 'CEO', 'United Airlines', '', ARRAY['Climate','DevTools']::text[], ARRAY['s6','s5']::text[], true);
 
 insert into events (id, conference_id, source, source_event_id, source_url, title, description, starts_at, ends_at, venue_name, lat, lng, tags, external_going_count, is_official, curation_status, curation_rationale, submitted_by) values
   ('official:lts-opening-reception', 'lts-2026', 'official', 'lts-opening-reception', '#', 'Summit Opening Reception', 'Drinks and small plates on the terrace. Badge required.', '2026-07-30T18:00:00-05:00'::timestamptz, '2026-07-30T21:00:00-05:00'::timestamptz, 'Austin Convention Center - Terrace', 30.2637, -97.7397, ARRAY['AI','FinTech','DevTools','Design','Climate']::text[], NULL, true, 'approved', 'matches AI, FinTech, DevTools, Design, Climate · 0.0 mi from venue', NULL),
@@ -437,11 +463,26 @@ insert into events (id, conference_id, source, source_event_id, source_url, titl
   ('attendee:sub-boardgames', 'lts-2026', 'attendee', 'sub-boardgames', '', 'Board games + beer', 'Grabbing the back room at Emerald Tavern. Bringing Wingspan and Azul, all welcome.', '2026-07-30T20:00:00-05:00'::timestamptz, '2026-07-30T23:00:00-05:00'::timestamptz, 'Emerald Tavern Games & Cafe', 30.2711, -97.7437, ARRAY['DevTools']::text[], NULL, false, 'candidate', 'Submitted by an attendee', 'a2'),
   ('attendee:sub-morningrun', 'lts-2026', 'attendee', 'sub-morningrun', '', 'Sunrise run along the trail', 'Easy 3 miles before the keynote. Meeting at the boardwalk entrance.', '2026-07-31T06:30:00-05:00'::timestamptz, '2026-07-31T07:30:00-05:00'::timestamptz, 'Ann and Roy Butler Trail', 30.2523, -97.7411, ARRAY[]::text[], NULL, false, 'candidate', 'Submitted by an attendee', 'a47'),
   ('eventbrite:eb-5k', 'lts-2026', 'eventbrite', 'eb-5k', 'https://www.eventbrite.com/e/lady-bird-5k', 'Lady Bird Lake 5K', 'Charity fun run around the trail.', '2026-07-30T07:00:00-05:00'::timestamptz, '2026-07-30T09:00:00-05:00'::timestamptz, 'Auditorium Shores', 30.2622, -97.7515, ARRAY[]::text[], 340, false, 'rejected', 'no tag match · morning slot · not a networking context', NULL),
-  ('official:tys-opening-reception', 'lts-tysons-2026', 'official', 'tys-opening-reception', '#', 'Tysons Opening Reception', 'Placeholder opening reception for the Tysons Corner conference.', '2026-07-30T18:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, '1765 Greensboro Station Pl - Lobby', 38.9196, -77.2264, ARRAY['AI','FinTech','DevTools','Design','Climate']::text[], NULL, true, 'approved', 'matches AI, FinTech, DevTools, Design, Climate · 0.0 mi from venue', NULL),
-  ('eventbrite:tys-eb-placeholder-mixer', 'lts-tysons-2026', 'eventbrite', 'tys-eb-placeholder-mixer', 'https://www.eventbrite.com/e/placeholder-tysons-mixer', 'Placeholder Tysons Mixer', 'Placeholder third-party event for the Tysons Corner fixture.', '2026-07-30T18:30:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, 'Placeholder Venue A', 38.9204, -77.2277, ARRAY['DevTools']::text[], 40, false, 'approved', 'matches DevTools · 0.1 mi from venue', NULL),
-  ('attendee:tys-host-placeholder-meetup', 'lts-tysons-2026', 'attendee', 'tys-host-placeholder-meetup', '', 'Placeholder Hosted Meetup', 'Placeholder attendee-hosted event for the Tysons Corner fixture.', '2026-07-30T19:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, 'Placeholder Venue B', 38.919, -77.2255, ARRAY['AI']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't2'),
-  ('attendee:tys-sub-placeholder-walk', 'lts-tysons-2026', 'attendee', 'tys-sub-placeholder-walk', '', 'Placeholder Sunrise Walk', 'Placeholder attendee submission awaiting review.', '2026-07-30T07:00:00-04:00'::timestamptz, '2026-07-30T08:00:00-04:00'::timestamptz, 'Placeholder Trailhead', 38.9182, -77.2249, ARRAY[]::text[], NULL, false, 'candidate', 'Submitted by an attendee', 't4'),
-  ('eventbrite:tys-eb-rejected-placeholder', 'lts-tysons-2026', 'eventbrite', 'tys-eb-rejected-placeholder', 'https://www.eventbrite.com/e/placeholder-rejected', 'Placeholder Rejected Run', 'Placeholder rejected candidate for the Tysons Corner fixture.', '2026-07-30T07:30:00-04:00'::timestamptz, '2026-07-30T08:30:00-04:00'::timestamptz, 'Placeholder Trail', 38.9161, -77.2231, ARRAY[]::text[], 12, false, 'rejected', 'no tag match · morning slot · not a networking context', NULL);
+  ('official:tys-opening-reception', 'lts-tysons-2026', 'official', 'tys-opening-reception', '#', 'Tysons Opening Reception', 'Drinks and small plates in the lobby. Badge required.', '2026-07-30T18:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, '1765 Greensboro Station Pl - Lobby', 38.9196, -77.2264, ARRAY['AI','FinTech','DevTools','Design','Climate']::text[], NULL, true, 'approved', 'matches AI, FinTech, DevTools, Design, Climate · 0.4 mi from venue', NULL),
+  ('eventbrite:tys-eb-cocktail-contest', 'lts-tysons-2026', 'eventbrite', 'tys-eb-cocktail-contest', 'https://www.eventbrite.com/e/cocktail-contest-capital-one-center-culinary-week-tickets-1991982494263', 'Cocktail Contest - Capital One Center Culinary Week', 'Six master mixologists compete with globally-inspired cocktails while guests sample five drinks, enjoy award-winning bites, and vote for a favourite. Outdoor bar and patio, 21+.', '2026-07-30T16:30:00-04:00'::timestamptz, '2026-07-30T19:30:00-04:00'::timestamptz, 'Ometeo, Capital One Center', 38.9257, -77.2109, ARRAY[]::text[], 150, false, 'approved', 'no tag match · 1.2 mi from venue', NULL),
+  ('eventbrite:tys-eb-real-estate-investing', 'lts-tysons-2026', 'eventbrite', 'tys-eb-real-estate-investing', 'https://www.eventbrite.com/e/foundations-and-secrets-of-real-estate-investing-tickets-1994399648035', 'Foundations and Secrets of Real Estate Investing', 'In-person session on real estate investing fundamentals. Free to attend, free parking behind the building.', '2026-07-30T16:00:00-04:00'::timestamptz, '2026-07-30T18:00:00-04:00'::timestamptz, '1900 Gallows Rd, Suite 230', 38.914, -77.2286, ARRAY['FinTech']::text[], 45, false, 'approved', 'matches FinTech · 0.6 mi from venue', NULL),
+  ('eventbrite:tys-eb-greenhouse-happy-hour', 'lts-tysons-2026', 'eventbrite', 'tys-eb-greenhouse-happy-hour', 'https://www.eventbrite.com/e/free-all-you-can-eat-happy-hour-tickets-1992375720413', 'Free All-You-Can-Eat Happy Hour', 'Buy any drink and the chef-selected bites are unlimited. Rotating appetizers in a greenhouse-themed room.', '2026-07-30T16:00:00-04:00'::timestamptz, '2026-07-30T19:00:00-04:00'::timestamptz, 'Greenhouse Bistro', 38.9174, -77.2373, ARRAY[]::text[], 60, false, 'approved', 'no tag match · 0.4 mi from venue', NULL),
+  ('luma:luma-tys-fintech-founders-hh', 'lts-tysons-2026', 'luma', 'luma-tys-fintech-founders-hh', 'https://lu.ma/fintech-founders-tysons', 'FinTech Founders Happy Hour', 'Patio drinks at The Boro. Payments and lending founders, mostly DMV-based.', '2026-07-30T18:00:00-04:00'::timestamptz, '2026-07-30T20:30:00-04:00'::timestamptz, 'The Boro Tysons', 38.9241, -77.2331, ARRAY['FinTech']::text[], 65, false, 'approved', 'matches FinTech · 0.1 mi from venue', NULL),
+  ('partiful:ptf-tys-founders-dinner', 'lts-tysons-2026', 'partiful', 'ptf-tys-founders-dinner', 'https://partiful.com/e/tysons-founders-dinner', 'Founders Dinner at CIRCA', 'Long table, no pitches. Twenty seats at CIRCA, first come.', '2026-07-30T19:30:00-04:00'::timestamptz, '2026-07-30T22:00:00-04:00'::timestamptz, 'CIRCA at The Boro', 38.9241, -77.2329, ARRAY['AI']::text[], 18, false, 'approved', 'matches AI · 0.1 mi from venue', NULL),
+  ('shotgun:sg-tys-rooftop-social', 'lts-tysons-2026', 'shotgun', 'sg-tys-rooftop-social', 'https://shotgun.live/events/tower-club-rooftop-social', 'Tower Club Rooftop Social', 'Skyline views over Tysons from the 17th floor. No cover with a summit badge.', '2026-07-30T20:00:00-04:00'::timestamptz, '2026-07-30T23:00:00-04:00'::timestamptz, 'The Tower Club Tysons', 38.9146, -77.2196, ARRAY['Design']::text[], 210, false, 'approved', 'matches Design · 0.9 mi from venue', NULL),
+  ('attendee:tys-host-ceo-roundtable', 'lts-tysons-2026', 'attendee', 'tys-host-ceo-roundtable', '', 'CEO Roundtable: Scaling in 2026', 'Off the record, no slides. Twenty-five seats in the Capital One Hall greenroom.', '2026-07-30T19:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, 'Capital One Hall', 38.9255, -77.2113, ARRAY['AI','FinTech']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't9'),
+  ('attendee:tys-hh-founding-farmers', 'lts-tysons-2026', 'attendee', 'tys-hh-founding-farmers', '', 'Happy Hour at Founding Farmers', 'Bar and patio happy hour runs 3:30–6. Craft cocktails, local drafts, $6.99 chicken tenders and $5.99 fried mac & cheese bites. Walk over straight from the last session.', '2026-07-30T17:00:00-04:00'::timestamptz, '2026-07-30T18:00:00-04:00'::timestamptz, 'Founding Farmers Tysons', 38.9223, -77.2225, ARRAY['FinTech']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't26'),
+  ('attendee:tys-hh-north-italia', 'lts-tysons-2026', 'attendee', 'tys-hh-north-italia', '', 'Drinks at North Italia', 'Bar-only happy hour, 3–6: $8 wine and sangria, $5.50 beers, plus the $44 Bottle & Board. Two minutes from the venue at The Boro.', '2026-07-30T17:00:00-04:00'::timestamptz, '2026-07-30T18:30:00-04:00'::timestamptz, 'North Italia', 38.9243, -77.2331, ARRAY['Design']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't15'),
+  ('attendee:tys-hh-barrel-bushel', 'lts-tysons-2026', 'attendee', 'tys-hh-barrel-bushel', '', 'Barrel & Bushel Happy Hour', 'Happy hour to 6:30 in the Hyatt at Tysons Corner Center: $5 select drafts, $6 wines, $7 cocktails and discounted apps.', '2026-07-30T17:00:00-04:00'::timestamptz, '2026-07-30T18:30:00-04:00'::timestamptz, 'Barrel & Bushel', 38.9187, -77.22, ARRAY[]::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't33'),
+  ('attendee:tys-hh-eddie-v', 'lts-tysons-2026', 'attendee', 'tys-hh-eddie-v', '', 'Oysters at Eddie V''s', 'V Lounge happy hour to 7: $7 cocktails, discounted wines by the glass, and the raw bar. Live music most nights.', '2026-07-30T17:30:00-04:00'::timestamptz, '2026-07-30T19:00:00-04:00'::timestamptz, 'Eddie V''s Prime Seafood', 38.9194, -77.2199, ARRAY['FinTech']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't29'),
+  ('attendee:tys-hh-agora', 'lts-tysons-2026', 'attendee', 'tys-hh-agora', '', 'Mezze and Cocktails at Agora', 'Mediterranean small plates and cocktails on Westpark. Shareable by design — good for a table that keeps growing.', '2026-07-30T17:30:00-04:00'::timestamptz, '2026-07-30T20:00:00-04:00'::timestamptz, 'Agora Tysons', 38.9251, -77.2189, ARRAY['Design']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't11'),
+  ('attendee:tys-hh-the-palm', 'lts-tysons-2026', 'attendee', 'tys-hh-the-palm', '', 'Steaks at The Palm', 'Bar happy hour at the Tysons Blvd steakhouse. Kitchen closes at 9, so this one starts early and ends clean.', '2026-07-30T17:30:00-04:00'::timestamptz, '2026-07-30T19:30:00-04:00'::timestamptz, 'The Palm - Tysons', 38.9246, -77.2224, ARRAY['FinTech']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't32'),
+  ('attendee:tys-hh-shipgarten', 'lts-tysons-2026', 'attendee', 'tys-hh-shipgarten', '', 'Beer Garden Meetup at Shipgarten', 'Four food and drink concepts out of 40ft shipping containers at Scotts Run, including the revived Tysons Biergarten. Outdoor, dog-friendly, no reservation needed. (The posted happy hour is Tuesdays, so this is full price.)', '2026-07-30T18:00:00-04:00'::timestamptz, '2026-07-30T21:00:00-04:00'::timestamptz, 'Shipgarten', 38.9239, -77.2072, ARRAY['Climate']::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't7'),
+  ('attendee:tys-hh-ometeo', 'lts-tysons-2026', 'attendee', 'tys-hh-ometeo', '', 'Nightcap at Ometeo', 'Straight after the Culinary Week cocktail contest wraps at the same venue — stay on the patio for a quieter round.', '2026-07-30T20:00:00-04:00'::timestamptz, '2026-07-30T22:00:00-04:00'::timestamptz, 'Ometeo, Capital One Center', 38.9257, -77.2109, ARRAY[]::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't46'),
+  ('attendee:tys-hh-yard-house', 'lts-tysons-2026', 'attendee', 'tys-hh-yard-house', '', 'Late Round at Yard House', '130 beers on tap and half-price select appetizers at Tysons Galleria. The default last stop.', '2026-07-30T21:00:00-04:00'::timestamptz, '2026-07-30T23:30:00-04:00'::timestamptz, 'Yard House', 38.9249, -77.2256, ARRAY[]::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't19'),
+  ('attendee:tys-hh-earls', 'lts-tysons-2026', 'attendee', 'tys-hh-earls', '', 'Late Night at Earls Kitchen + Bar', 'Earls runs a second happy hour from 9pm: $5 beer, $6 wine, $7 cocktails and the truffle fries. Right by the Tysons Corner Metro if you are training back.', '2026-07-30T21:00:00-04:00'::timestamptz, '2026-07-30T23:00:00-04:00'::timestamptz, 'Earls Kitchen + Bar', 38.9194, -77.2209, ARRAY[]::text[], NULL, false, 'approved', 'Hosted by an attendee · approved by the organizer', 't14'),
+  ('attendee:tys-sub-scotts-run-walk', 'lts-tysons-2026', 'attendee', 'tys-sub-scotts-run-walk', '', 'Sunrise Walk at Scotts Run', 'Easy loop through Scotts Run Nature Preserve before the keynote. Meet at the trailhead.', '2026-07-30T07:00:00-04:00'::timestamptz, '2026-07-30T08:00:00-04:00'::timestamptz, 'Scotts Run Nature Preserve', 38.9574, -77.2013, ARRAY[]::text[], NULL, false, 'candidate', 'Submitted by an attendee', 't4'),
+  ('eventbrite:tys-eb-bni-breakfast', 'lts-tysons-2026', 'eventbrite', 'tys-eb-bni-breakfast', 'https://www.eventbrite.com/e/bni-tysons-mastermind-networking-breakfast-tickets-1983480465466', 'BNI Tysons Mastermind Networking Breakfast', 'Weekly referral-networking breakfast for local business owners. Free to attend, free parking.', '2026-07-30T08:00:00-04:00'::timestamptz, '2026-07-30T09:30:00-04:00'::timestamptz, 'Intelligent Office - Tysons Corner', 38.912, -77.2224, ARRAY[]::text[], 25, false, 'rejected', 'no tag match · morning slot · clashes with the keynote', NULL);
 
 insert into rsvps (event_id, attendee_id, anonymous) values
   ('official:lts-opening-reception', 'a2', false), ('official:lts-opening-reception', 'a3', false), ('official:lts-opening-reception', 'a4', false), ('official:lts-opening-reception', 'a5', false), ('official:lts-opening-reception', 'a6', false), ('official:lts-opening-reception', 'a8', false), ('official:lts-opening-reception', 'a14', false), ('official:lts-opening-reception', 'a16', false), ('official:lts-opening-reception', 'a20', false), ('official:lts-opening-reception', 'a39', false), ('official:lts-opening-reception', 'a45', false), ('official:lts-opening-reception', 'a54', false), ('official:lts-opening-reception', 'a57', false), ('official:lts-opening-reception', 'a61', false), ('official:lts-opening-reception', 'a9', true),
@@ -470,5 +511,20 @@ insert into rsvps (event_id, attendee_id, anonymous) values
   ('luma:luma-datadog-observability', 'a6', false), ('luma:luma-datadog-observability', 'a7', false), ('luma:luma-datadog-observability', 'a18', false), ('luma:luma-datadog-observability', 'a46', false), ('luma:luma-datadog-observability', 'a48', false), ('luma:luma-datadog-observability', 'a49', false), ('luma:luma-datadog-observability', 'a51', false), ('luma:luma-datadog-observability', 'a55', false), ('luma:luma-datadog-observability', 'a59', false),
   ('luma:luma-github-open-source', 'a2', false), ('luma:luma-github-open-source', 'a45', false), ('luma:luma-github-open-source', 'a46', false), ('luma:luma-github-open-source', 'a50', false), ('luma:luma-github-open-source', 'a51', false), ('luma:luma-github-open-source', 'a53', false), ('luma:luma-github-open-source', 'a58', false), ('luma:luma-github-open-source', 'a60', false), ('luma:luma-github-open-source', 'a62', false), ('luma:luma-github-open-source', 'a63', false), ('luma:luma-github-open-source', 'a55', false),
   ('official:tys-opening-reception', 't1', false), ('official:tys-opening-reception', 't2', false), ('official:tys-opening-reception', 't3', false), ('official:tys-opening-reception', 't5', true),
-  ('eventbrite:tys-eb-placeholder-mixer', 't2', false), ('eventbrite:tys-eb-placeholder-mixer', 't4', false),
-  ('attendee:tys-host-placeholder-meetup', 't1', false), ('attendee:tys-host-placeholder-meetup', 't2', false), ('attendee:tys-host-placeholder-meetup', 't6', false);
+  ('eventbrite:tys-eb-cocktail-contest', 't2', false), ('eventbrite:tys-eb-cocktail-contest', 't4', false), ('eventbrite:tys-eb-cocktail-contest', 't46', true),
+  ('eventbrite:tys-eb-real-estate-investing', 't26', false), ('eventbrite:tys-eb-real-estate-investing', 't31', false), ('eventbrite:tys-eb-real-estate-investing', 't33', false),
+  ('eventbrite:tys-eb-greenhouse-happy-hour', 't35', false), ('eventbrite:tys-eb-greenhouse-happy-hour', 't49', false),
+  ('luma:luma-tys-fintech-founders-hh', 't27', false), ('luma:luma-tys-fintech-founders-hh', 't29', false), ('luma:luma-tys-fintech-founders-hh', 't44', false),
+  ('partiful:ptf-tys-founders-dinner', 't8', false), ('partiful:ptf-tys-founders-dinner', 't13', false),
+  ('shotgun:sg-tys-rooftop-social', 't15', false), ('shotgun:sg-tys-rooftop-social', 't21', false), ('shotgun:sg-tys-rooftop-social', 't48', false),
+  ('attendee:tys-host-ceo-roundtable', 't1', false), ('attendee:tys-host-ceo-roundtable', 't2', false), ('attendee:tys-host-ceo-roundtable', 't6', false),
+  ('attendee:tys-hh-founding-farmers', 't26', false), ('attendee:tys-hh-founding-farmers', 't28', false), ('attendee:tys-hh-founding-farmers', 't30', false), ('attendee:tys-hh-founding-farmers', 't45', true),
+  ('attendee:tys-hh-north-italia', 't15', false), ('attendee:tys-hh-north-italia', 't18', false), ('attendee:tys-hh-north-italia', 't21', false), ('attendee:tys-hh-north-italia', 't34', true),
+  ('attendee:tys-hh-barrel-bushel', 't33', false), ('attendee:tys-hh-barrel-bushel', 't36', false), ('attendee:tys-hh-barrel-bushel', 't37', false),
+  ('attendee:tys-hh-eddie-v', 't29', false), ('attendee:tys-hh-eddie-v', 't27', false), ('attendee:tys-hh-eddie-v', 't31', false), ('attendee:tys-hh-eddie-v', 't41', false),
+  ('attendee:tys-hh-agora', 't11', false), ('attendee:tys-hh-agora', 't16', false), ('attendee:tys-hh-agora', 't43', false),
+  ('attendee:tys-hh-the-palm', 't32', false), ('attendee:tys-hh-the-palm', 't24', false), ('attendee:tys-hh-the-palm', 't50', false), ('attendee:tys-hh-the-palm', 't51', true),
+  ('attendee:tys-hh-shipgarten', 't7', false), ('attendee:tys-hh-shipgarten', 't13', false), ('attendee:tys-hh-shipgarten', 't55', false), ('attendee:tys-hh-shipgarten', 't25', false), ('attendee:tys-hh-shipgarten', 't39', true),
+  ('attendee:tys-hh-ometeo', 't46', false), ('attendee:tys-hh-ometeo', 't47', false), ('attendee:tys-hh-ometeo', 't49', false),
+  ('attendee:tys-hh-yard-house', 't19', false), ('attendee:tys-hh-yard-house', 't17', false), ('attendee:tys-hh-yard-house', 't35', false), ('attendee:tys-hh-yard-house', 't52', false), ('attendee:tys-hh-yard-house', 't53', true),
+  ('attendee:tys-hh-earls', 't14', false), ('attendee:tys-hh-earls', 't22', false), ('attendee:tys-hh-earls', 't54', false), ('attendee:tys-hh-earls', 't23', true);
