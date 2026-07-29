@@ -79,8 +79,8 @@ describe('checkin', () => {
     const { getAdminMode } = await import('./adminMode')
 
     await checkIn(tysonsConference.id, {
-      firstName: 'jordan',
-      lastName: 'BLAKE',
+      firstName: 'abhinav',
+      lastName: 'PAPPU',
       department: 'Technology',
     })
 

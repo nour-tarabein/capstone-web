@@ -9,8 +9,9 @@ export interface AllowlistedName {
  * will swap these for the real names before the event.
  */
 const ADMIN_ALLOWLIST: AllowlistedName[] = [
-  { firstName: 'Jordan', lastName: 'Blake' },
-  { firstName: 'Taylor', lastName: 'Nguyen' },
+  { firstName: 'Abhinav', lastName: 'Pappu' },
+  { firstName: 'Nour', lastName: 'Tarabein' },
+  { firstName: 'Areeb', lastName: 'Khan' },
 ]
 
 function normalize(name: string): string {

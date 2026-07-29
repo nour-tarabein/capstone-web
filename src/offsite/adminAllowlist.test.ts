@@ -3,16 +3,16 @@ import { isAllowlistedAdmin } from './adminAllowlist'
 
 describe('isAllowlistedAdmin', () => {
   it('matches an allowlisted name exactly', () => {
-    expect(isAllowlistedAdmin('Jordan', 'Blake')).toBe(true)
+    expect(isAllowlistedAdmin('Abhinav', 'Pappu')).toBe(true)
   })
 
   it('matches case-insensitively', () => {
-    expect(isAllowlistedAdmin('jordan', 'BLAKE')).toBe(true)
-    expect(isAllowlistedAdmin('JORDAN', 'blake')).toBe(true)
+    expect(isAllowlistedAdmin('abhinav', 'PAPPU')).toBe(true)
+    expect(isAllowlistedAdmin('ABHINAV', 'pappu')).toBe(true)
   })
 
   it('tolerates surrounding whitespace', () => {
-    expect(isAllowlistedAdmin('  Jordan  ', '  Blake  ')).toBe(true)
+    expect(isAllowlistedAdmin('  Abhinav  ', '  Pappu  ')).toBe(true)
   })
 
   it('rejects a name not on the allowlist', () => {
@@ -20,10 +20,10 @@ describe('isAllowlistedAdmin', () => {
   })
 
   it('rejects a first name matching one entry paired with a last name from another', () => {
-    expect(isAllowlistedAdmin('Jordan', 'Nguyen')).toBe(false)
+    expect(isAllowlistedAdmin('Abhinav', 'Tarabein')).toBe(false)
   })
 
   it('rejects a partial substring match', () => {
-    expect(isAllowlistedAdmin('Jordan', 'Blakely')).toBe(false)
+    expect(isAllowlistedAdmin('Abhinav', 'Pappuly')).toBe(false)
   })
 })
