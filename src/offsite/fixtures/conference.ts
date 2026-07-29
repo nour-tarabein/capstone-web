@@ -23,7 +23,7 @@ export const conference: Conference = {
  */
 export const tysonsConference: Conference = {
   id: 'lts-tysons-2026',
-  name: 'Cvent National Intern Conference 2026',
+  name: 'CIX Summit 2026',
   city: 'McLean, VA',
   venueName: '1765 Greensboro Station Pl, 7th Floor',
   venueLat: 38.9221,
