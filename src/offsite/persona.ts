@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { allAttendeesById } from './roster';
+import { getAllCheckedInAttendees } from './checkinStorage';
 
 /**
  * Which attendee you are viewing as.
@@ -15,16 +16,26 @@ import { allAttendeesById } from './roster';
  * wipe a stored persona just because it belongs to the other conference's
  * roster. Screens that read the active conference's roster simply won't find
  * that viewer until the user picks a persona from More that belongs to it.
+ *
+ * A viewer id also doesn't have to be in either static roster: the Tysons
+ * Corner welcome/check-in screen (issue #5) manufactures brand-new attendees
+ * at runtime, so validity additionally checks the browser's own check-in
+ * record.
  */
 const STORAGE_KEY = 'lts-viewer-id-v2';
 const DEFAULT_VIEWER_ID = 'a47';
 
 const listeners = new Set<() => void>();
 
+function isKnownViewerId(id: string): boolean {
+  if (allAttendeesById.has(id)) return true;
+  return getAllCheckedInAttendees().some((a) => a.id === id);
+}
+
 function readStoredId(): string {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && allAttendeesById.has(stored)) return stored;
+    if (stored && isKnownViewerId(stored)) return stored;
   } catch {
     // private mode / blocked storage — fall through
   }
@@ -40,7 +51,7 @@ function persistId(id: string): void {
 }
 
 let viewerId = readStoredId();
-if (!allAttendeesById.has(viewerId)) viewerId = DEFAULT_VIEWER_ID;
+if (!isKnownViewerId(viewerId)) viewerId = DEFAULT_VIEWER_ID;
 persistId(viewerId);
 
 export function getViewerId(): string {
@@ -48,7 +59,7 @@ export function getViewerId(): string {
 }
 
 export function setViewerId(id: string): void {
-  if (!allAttendeesById.has(id)) return;
+  if (!isKnownViewerId(id)) return;
   if (id === viewerId) return;
   viewerId = id;
   persistId(id);

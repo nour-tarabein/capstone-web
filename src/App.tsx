@@ -14,17 +14,33 @@ import { MoreScreen } from './screens/More';
 import { MyEventScreen } from './screens/MyEvent';
 import { MapScreen } from './screens/MapScreen';
 import { ReviewQueueScreen } from './screens/ReviewQueue';
+import { WelcomeScreen } from './screens/Welcome';
 import { OverlayHost } from './overlays';
 import { Toaster } from './ui/toast';
+import { getActiveConferenceId } from './offsite/activeConference';
+import { tysonsConference } from './offsite/fixtures/conference';
+import { hasCheckedIn } from './offsite/checkinStorage';
 
 /**
  * Hash-based routing so the browser back button works on the overlay screens
  * (map, review queue) — on a phone that back gesture is muscle memory, and a
  * purely state-based overlay would make it close the whole site instead.
  */
-type Route = 'tabs' | 'map' | 'review';
+type Route = 'tabs' | 'map' | 'review' | 'welcome';
+
+/**
+ * Tysons Corner's first-run gate (issue #5): a browser that hasn't checked in
+ * yet always lands on the welcome screen, regardless of what hash it asks
+ * for — this is what makes it a real gate rather than a suggestion the
+ * address bar can bypass. Austin never shows it; today's default persona
+ * keeps landing on the tab stack unchanged.
+ */
+function needsWelcome(): boolean {
+  return getActiveConferenceId() === tysonsConference.id && !hasCheckedIn(tysonsConference.id);
+}
 
 function parseRoute(): Route {
+  if (needsWelcome()) return 'welcome';
   const hash = window.location.hash;
   if (hash.startsWith('#/map')) return 'map';
   if (hash.startsWith('#/review')) return 'review';
@@ -71,6 +87,11 @@ export function App() {
 
   useEffect(() => {
     switchTab = setTab;
+    // Cosmetic: keep the address bar honest about the gate ("a new hash
+    // route") even though parseRoute() enforces it independent of the hash.
+    if (route === 'welcome' && !window.location.hash.startsWith('#/welcome')) {
+      window.location.hash = '/welcome';
+    }
     const onHash = () => setRoute(parseRoute());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -120,6 +141,11 @@ export function App() {
       {route === 'review' ? (
         <div className="route-layer">
           <ReviewQueueScreen />
+        </div>
+      ) : null}
+      {route === 'welcome' ? (
+        <div className="route-layer">
+          <WelcomeScreen />
         </div>
       ) : null}
 

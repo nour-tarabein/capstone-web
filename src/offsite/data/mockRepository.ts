@@ -1,4 +1,5 @@
 import type {
+  AttendeeDraft,
   AttendingList,
   Attendee,
   Conference,
@@ -15,6 +16,7 @@ import { sessionTitles } from '../fixtures/sessions'
 import { attendees, attendeesById } from '../fixtures/attendees'
 import { tysonsAttendeesById } from '../fixtures/attendeesTysons'
 import { getViewerId } from '../persona'
+import { getAllCheckedInAttendees } from '../checkinStorage'
 import { events, pendingSubmissions, rejectedCandidates } from '../fixtures/events'
 import {
   tysonsEvents,
@@ -80,7 +82,17 @@ export function createMockRepository(): Repository {
       ),
     ],
   ])
+
+  // Restore any attendee this browser created via the welcome/check-in screen
+  // (issue #5). The mock bundle is rebuilt from fixtures on every load, so
+  // without this a refresh right after check-in would "lose" the new
+  // attendee even though persona.ts still points the viewer at it.
+  for (const attendee of getAllCheckedInAttendees()) {
+    bundles.get(attendee.conferenceId)?.attendeesById.set(attendee.id, attendee)
+  }
+
   let submissionSeq = 0
+  let checkinSeq = 0
 
   const listeners = new Map<string, Set<() => void>>()
   const notify = (conferenceId: string, eventId: string) =>
@@ -106,6 +118,23 @@ export function createMockRepository(): Repository {
       const viewer = bundleFor(conferenceId).attendeesById.get(viewerId)
       if (!viewer) throw new Error(`Attendee ${viewerId} not found in conference ${conferenceId}`)
       return viewer
+    },
+
+    async createAttendee(conferenceId: string, draft: AttendeeDraft): Promise<Attendee> {
+      const bundle = bundleFor(conferenceId)
+      const attendee: Attendee = {
+        id: `checkin:${conferenceId}:${++checkinSeq}`,
+        conferenceId,
+        name: draft.name,
+        title: '',
+        company: draft.company,
+        photoUrl: '',
+        interests: [],
+        sessionIds: [],
+        directoryOptIn: true,
+      }
+      bundle.attendeesById.set(attendee.id, attendee)
+      return attendee
     },
 
     async listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]> {

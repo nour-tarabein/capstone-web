@@ -42,7 +42,7 @@ begin
     where pronamespace = 'public'::regnamespace
       and proname in (
         'going_counts', 'attending_list', 'rsvp_create', 'rsvp_cancel',
-        'event_submit', 'pending_events', 'event_review'
+        'event_submit', 'pending_events', 'event_review', 'attendee_checkin'
       )
   loop
     execute format('drop function if exists %s cascade', fn.sig);
@@ -269,6 +269,28 @@ begin
 end;
 $$;
 
+-- Manufactures a brand-new attendee for a browser that has no identity yet —
+-- the Tysons Corner welcome/check-in screen (issue #5). anon has no INSERT on
+-- attendees (no policy grants it), so this has to run SECURITY DEFINER, same
+-- as event_submit. Returns the inserted row so the client can adopt its id as
+-- the viewer persona without a second round trip.
+create or replace function attendee_checkin(p_conference_id text, p_name text, p_company text)
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_row attendees;
+begin
+  insert into attendees (id, conference_id, name, title, company, photo_url, interests, session_ids, directory_opt_in)
+  values (
+    'checkin:' || replace(gen_random_uuid()::text, '-', ''),
+    p_conference_id, trim(p_name), '', coalesce(p_company, ''), '', '{}', '{}', true
+  )
+  returning * into v_row;
+  return to_jsonb(v_row);
+end;
+$$;
+
 -- The organizer review queue cannot be a plain SELECT: the rows it needs are
 -- exactly the ones events_read hides. SECURITY DEFINER, joined to the submitter
 -- so the queue can name the host without a second round trip. Scoped to one
@@ -305,6 +327,7 @@ grant execute on function rsvp_cancel(text, text, text)                         
 grant execute on function event_submit(text, text, text, timestamptz, text, double precision, double precision, text) to anon, authenticated;
 grant execute on function pending_events(text)                                                                 to anon, authenticated;
 grant execute on function event_review(text, text, text)                                                       to anon, authenticated;
+grant execute on function attendee_checkin(text, text, text)                                                   to anon, authenticated;
 
 -- ============================================================
 -- SEED DATA  (generated from src/offsite/fixtures — do not edit by hand)
