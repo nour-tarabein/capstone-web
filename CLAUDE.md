@@ -64,7 +64,11 @@ The map screen uses **Leaflet** with CARTO's dark basemap — no Mapbox token ne
 
 ### Build / deploy
 
-Vite is configured with `base: './'` so the build works from any URL path, including GitHub Pages project sites (`/<repo-name>/`). The deploy workflow is at `.github/workflows/deploy.yml`.
+The app deploys to **Vercel**, which builds from the default branch on push — there is no deploy workflow in this repo.
+
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set as **Vercel project environment variables** (Project → Settings → Environment Variables), not as CI secrets. Vite inlines them at build time, so changing one requires a redeploy to take effect. Unset, the build falls back to the in-memory fixture demo.
+
+Vite is configured with `base: './'`. That was originally for GitHub Pages project sites (`/<repo-name>/`); Vercel serves from the domain root, so it is no longer needed — but relative asset URLs work fine there too, and it is retained intentionally rather than changed for no gain.
 
 ## Agent skills
 

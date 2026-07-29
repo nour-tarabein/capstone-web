@@ -17,19 +17,14 @@ npm run dev
 Open the printed URL. On a desktop browser the app renders in a phone-sized
 frame; on a phone it fills the screen.
 
-## Put it on GitHub Pages
+## Deploy it
 
-1. Create a **public** GitHub repository and push this directory to its
-   `main` branch.
-2. In the repo settings, under **Pages**, set the source to **GitHub
-   Actions**.
-3. Push (or re-run the workflow). The included
-   `.github/workflows/deploy.yml` builds the site and publishes it at
-   `https://<user>.github.io/<repo>/`.
+The app deploys to **Vercel**. Import the repository as a Vercel project once
+(Vite is detected automatically — build `npm run build`, output `dist`), and
+every push to `main` publishes a new production deployment.
 
-Share that URL with the audience — a QR code of it on your last slide works
-well. The Vite config uses a relative base path, so the build works from any
-subpath without edits.
+Share the production URL with the audience — a QR code of it on your last slide
+works well.
 
 ## Live multi-device mode (Supabase)
 
@@ -50,15 +45,12 @@ interface for exactly this).
    The anon key is safe to expose in the browser — the schema protects data
    with RLS, not by hiding the key.
 4. **Local:** `cp .env.example .env.local`, paste the two values, `npm run dev`.
-5. **Deployed site:** add the two values as GitHub Actions secrets, then
-   re-run the deploy workflow:
-   ```sh
-   gh secret set VITE_SUPABASE_URL --body "https://YOUR-PROJECT.supabase.co"
-   gh secret set VITE_SUPABASE_ANON_KEY --body "YOUR-ANON-KEY"
-   gh workflow run "Deploy to GitHub Pages"
-   ```
-   With the secrets unset, the build falls back to the in-memory demo — so the
-   site keeps working before (and without) any of this.
+5. **Deployed site:** add the two values as **Vercel project environment
+   variables** (Project → Settings → Environment Variables), then redeploy.
+   Vite inlines them at build time, so a change only takes effect on the next
+   build — editing them does not update the deployment already serving.
+   With them unset, the build falls back to the in-memory demo — so the site
+   keeps working before (and without) any of this.
 
 The two-phone moment: open the same event on two phones, RSVP on one, and the
 other's attending count updates within ~2.5s (it polls — a deliberate choice
