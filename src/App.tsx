@@ -17,7 +17,7 @@ import { ReviewQueueScreen } from './screens/ReviewQueue';
 import { WelcomeScreen } from './screens/Welcome';
 import { OverlayHost } from './overlays';
 import { Toaster } from './ui/toast';
-import { getActiveConferenceId } from './offsite/activeConference';
+import { getActiveConferenceId, subscribeToActiveConference } from './offsite/activeConference';
 import { tysonsConference } from './offsite/fixtures/conference';
 import { hasCheckedIn } from './offsite/checkinStorage';
 
@@ -92,9 +92,16 @@ export function App() {
     if (route === 'welcome' && !window.location.hash.startsWith('#/welcome')) {
       window.location.hash = '/welcome';
     }
-    const onHash = () => setRoute(parseRoute());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    const onRouteInputChange = () => setRoute(parseRoute());
+    window.addEventListener('hashchange', onRouteInputChange);
+    // The city switcher in More (issue #4) can flip the active conference to
+    // Tysons mid-session, with no hashchange involved — without this the
+    // welcome gate would only catch it on the next reload.
+    const unsubscribe = subscribeToActiveConference(onRouteInputChange);
+    return () => {
+      window.removeEventListener('hashchange', onRouteInputChange);
+      unsubscribe();
+    };
   }, []);
 
   return (
