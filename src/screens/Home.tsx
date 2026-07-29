@@ -1,9 +1,11 @@
 import { mdiChevronRight, mdiMapOutline } from '@mdi/js';
 import heroBanner from '../assets/hero-banner.jpg';
+import heroBannerTysons from '../assets/hero-banner-tysons.jpg';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { goToTab, openMap } from '../App';
 import { homeActions, sessionGuide } from '../data/mock';
 import { useActiveConference } from '../offsite/activeConference';
+import { conference, tysonsConference } from '../offsite/fixtures/conference';
 import { useActiveRoster } from '../offsite/roster';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
@@ -18,6 +20,13 @@ const TILE_TARGETS: Record<string, () => void> = {
   exhibitors: () => goToTab('exhibitors'),
   sponsors: () => openOverlay({ kind: 'sponsors' }),
   games: () => openOverlay({ kind: 'games' }),
+};
+
+/** Web-only hero art per conference — the mobile app has no equivalent, so
+ *  this stays local to Home.tsx rather than joining the ported Conference type. */
+const HERO_IMAGES: Record<string, string> = {
+  [conference.id]: heroBanner,
+  [tysonsConference.id]: heroBannerTysons,
 };
 
 const MONTH_NAMES = [
@@ -39,6 +48,7 @@ export function HomeScreen() {
   const { attendees } = useActiveRoster();
   const activeConference = useActiveConference();
   const nightsOut = activeConference.nights.length;
+  const heroImage = HERO_IMAGES[activeConference.id] ?? heroBanner;
 
   return (
     <div className="screen home-screen">
@@ -47,7 +57,7 @@ export function HomeScreen() {
         center={
           <div className="brand-block">
             <span className="brand-logo">Capstone Demo</span>
-            <span className="brand-event-title">Lonestar Tech Summit 2026</span>
+            <span className="brand-event-title">{activeConference.name}</span>
           </div>
         }
       />
@@ -55,7 +65,7 @@ export function HomeScreen() {
       <div className="screen-scroll home-content">
         <div className="hero-wrap">
           <img
-            src={heroBanner}
+            src={heroImage}
             alt={`${activeConference.city} skyline at dusk`}
             className="hero-image"
           />
@@ -81,7 +91,7 @@ export function HomeScreen() {
           </span>
         </div>
 
-        <h1 className="home-welcome">Welcome to Lonestar Tech Summit 2026</h1>
+        <h1 className="home-welcome">Welcome to {activeConference.name}</h1>
         <p className="home-body">
           On your Tuesday agenda: Opening Keynote, Scaling Inference on a
           Budget, breakout sessions, and the Summit Opening Reception on the
