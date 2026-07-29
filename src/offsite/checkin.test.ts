@@ -129,11 +129,11 @@ describe('checkin', () => {
 
     const { hasCheckedIn } = await import('./checkinStorage')
     const { getViewerId } = await import('./persona')
-    const { repository } = await import('./data')
+    const { getRepository } = await import('./data')
 
     expect(hasCheckedIn(tysonsConference.id)).toBe(true)
     expect(getViewerId()).toBe(attendee.id)
-    await expect(repository.getViewer(tysonsConference.id)).resolves.toMatchObject({
+    await expect(getRepository(tysonsConference.id).getViewer(tysonsConference.id)).resolves.toMatchObject({
       id: attendee.id,
       name: 'Jamie Rivera',
       company: 'Technology',

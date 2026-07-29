@@ -11,7 +11,7 @@ import {
 import { ScreenHeader } from '../components/ScreenHeader';
 import { openMap, openReview } from '../App';
 import { moreGeneralItems, moreInviteOnlyItems, moreMenuItems } from '../data/mock';
-import { repository } from '../offsite/data';
+import { getRepository } from '../offsite/data';
 import {
   setActiveConferenceId,
   useActiveConference,
@@ -65,7 +65,7 @@ export function MoreScreen() {
     if (!adminMode) return;
     let cancelled = false;
     const refresh = () =>
-      void repository
+      void getRepository(activeConferenceId)
         .listPendingEvents(activeConferenceId)
         .then((list) => {
           if (!cancelled) setPendingCount(list.length);

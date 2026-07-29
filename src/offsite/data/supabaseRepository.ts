@@ -78,6 +78,17 @@ export function createSupabaseRepository(): Repository {
       return toAttendee(data)
     },
 
+    // Plain select, not an RPC: the attendees_read policy already scopes anon
+    // reads to opted-in rows (supabase/schema.sql), so there is nothing a
+    // SECURITY DEFINER function would add here — unlike the rsvps table, the
+    // roster has a real public-read policy.
+    async listRoster(conferenceId: string): Promise<Attendee[]> {
+      const { data } = unwrap(
+        await client.from('attendees').select('*').eq('conference_id', conferenceId),
+      )
+      return (data ?? []).map(toAttendee)
+    },
+
     async listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]> {
       // unwrap, not a bare destructure: without it a failed query returns null
       // and the map silently renders an empty night, which is indistinguishable

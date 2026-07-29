@@ -45,7 +45,12 @@ function buildBundle(
 ): ConferenceBundle {
   return {
     conference: conf,
-    attendeesById: attendeesById_,
+    // A copy, not the imported fixture map — same reasoning as events/rsvps
+    // below. Without it, createAttendee's .set() would mutate the shared
+    // fixture Map directly, leaking check-ins from one createMockRepository()
+    // call into every other one for the life of the module (e.g. across
+    // tests in the same run).
+    attendeesById: new Map(attendeesById_),
     events: [...seedEvents],
     rsvps: [...rsvpSeed],
   }
@@ -135,6 +140,10 @@ export function createMockRepository(): Repository {
       }
       bundle.attendeesById.set(attendee.id, attendee)
       return attendee
+    },
+
+    async listRoster(conferenceId: string): Promise<Attendee[]> {
+      return Array.from(bundleFor(conferenceId).attendeesById.values())
     },
 
     async listEventsForNight(conferenceId: string, night: string): Promise<OffsiteEvent[]> {

@@ -6,7 +6,7 @@ import type {
   Conference,
   OffsiteEvent,
 } from '../offsite/domain/types';
-import { repository } from '../offsite/data';
+import { getRepository } from '../offsite/data';
 import { getRoster } from '../offsite/roster';
 import { milesBetween } from '../offsite/ingestion/curate';
 import { formatTime, sourceColors, sourceLabels } from '../offsite/format';
@@ -33,9 +33,10 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
   const [burstKey, setBurstKey] = useState(0);
 
   const refresh = useCallback(async () => {
+    const repo = getRepository(conference.id);
     const [e, a] = await Promise.all([
-      repository.getEvent(conference.id, eventId),
-      repository.getAttendingList(conference.id, eventId, viewer.id),
+      repo.getEvent(conference.id, eventId),
+      repo.getAttendingList(conference.id, eventId, viewer.id),
     ]);
     setEvent(e);
     setAttending(a);
@@ -43,7 +44,7 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
 
   useEffect(() => {
     void refresh();
-    return repository.subscribeToEvent(conference.id, eventId, () => void refresh());
+    return getRepository(conference.id).subscribeToEvent(conference.id, eventId, () => void refresh());
   }, [conference.id, eventId, refresh]);
 
   const going = attending ? !attending.gated : false;
@@ -52,10 +53,11 @@ export function EventSheet({ eventId, viewer, conference, onClose, onRsvpChange 
     if (busy) return;
     setBusy(true);
     try {
+      const repo = getRepository(conference.id);
       if (going) {
-        await repository.cancelRsvp(conference.id, eventId, viewer.id);
+        await repo.cancelRsvp(conference.id, eventId, viewer.id);
       } else {
-        await repository.rsvp(conference.id, eventId, viewer.id, anonymous);
+        await repo.rsvp(conference.id, eventId, viewer.id, anonymous);
         // The payoff moment: the gate lifts and the room appears.
         setBurstKey((k) => k + 1);
       }

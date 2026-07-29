@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { mdiCheckDecagram } from '@mdi/js';
 import type { Attendee, Conference } from '../offsite/domain/types';
-import { repository } from '../offsite/data';
+import { getRepository } from '../offsite/data';
 import { conferenceIso } from '../offsite/format';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { Sheet, useDismiss } from '../ui/Sheet';
@@ -58,7 +58,7 @@ function HostForm({
     setBusy(true);
     try {
       const venue = VENUES[venueIndex];
-      await repository.submitEvent(conference.id, {
+      await getRepository(conference.id).submitEvent(conference.id, {
         title,
         description,
         startsAt: conferenceIso(night, time),

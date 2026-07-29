@@ -1,5 +1,5 @@
 import type { Attendee } from './domain/types'
-import { repository } from './data'
+import { getRepository, refreshLiveRoster } from './data'
 import { setViewerId } from './persona'
 import { storeCheckedInAttendee } from './checkinStorage'
 import { isAllowlistedAdmin } from './adminAllowlist'
@@ -33,13 +33,18 @@ export async function checkIn(conferenceId: string, input: CheckInInput): Promis
     throw new Error('First and last name are required to check in.')
   }
 
-  const attendee = await repository.createAttendee(conferenceId, {
+  const attendee = await getRepository(conferenceId).createAttendee(conferenceId, {
     name: `${firstName} ${lastName}`,
     company: input.department,
   })
 
   storeCheckedInAttendee(attendee)
   setViewerId(attendee.id)
+  // A live conference's roster cache was fetched before this attendee
+  // existed — refresh it now so this browser's own People/Search screens
+  // show them immediately instead of waiting for the next mount. A no-op
+  // for a mock-backed conference.
+  await refreshLiveRoster(conferenceId)
 
   if (conferenceId === tysonsConference.id && isAllowlistedAdmin(firstName, lastName)) {
     setAdminMode(true)
