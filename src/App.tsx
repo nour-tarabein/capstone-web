@@ -6,6 +6,7 @@ import {
   mdiHomeOutline,
   mdiMenu,
 } from '@mdi/js';
+import { Analytics } from '@vercel/analytics/react';
 import { Icon } from './icons';
 import { HomeScreen } from './screens/Home';
 import { ScheduleScreen } from './screens/Schedule';
@@ -164,6 +165,7 @@ export function App() {
 
       <OverlayHost />
       <Toaster />
+      <Analytics />
     </div>
   );
 }
