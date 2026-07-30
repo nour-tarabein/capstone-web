@@ -5,7 +5,6 @@ import { getRepository } from '../offsite/data';
 import { conferenceIso } from '../offsite/format';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { openReview } from '../App';
-import { Sheet } from '../ui/Sheet';
 import { venuesForConference } from '../offsite/fixtures/venues';
 import { Burst } from '../ui/Burst';
 import { Icon } from '../icons';
@@ -86,7 +85,7 @@ function HostForm({
           Your event went to the organizer&apos;s review queue. It appears on
           the map as soon as they approve it.
         </p>
-        <button className="rsvp-button" onClick={openReview}>
+        <button className="rsvp-button" onClick={() => { dismiss(); openReview(); }}>
           Open review queue
         </button>
       </div>

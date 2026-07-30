@@ -9,7 +9,7 @@ import { conference, tysonsConference } from '../offsite/fixtures/conference';
 import { useActiveRoster } from '../offsite/roster';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
-import { colors } from '../theme';
+import { LiquidGlass } from '../components/LiquidGlass';
 
 /** Where each quick tile goes. Tiles without a screen of their own open the
  *  matching sheet, so every tap on the grid lands somewhere real. */
@@ -80,13 +80,16 @@ export function HomeScreen() {
         </div>
 
         <div className="stat-row">
-          <span className="stat-chip">
+          <span className="stat-chip liquid-control-surface">
+            <LiquidGlass className="control-glass" />
             <strong>{attendees.length * 60}+</strong> attendees
           </span>
-          <span className="stat-chip">
+          <span className="stat-chip liquid-control-surface">
+            <LiquidGlass className="control-glass" />
             <strong>{sessionCount}</strong> sessions
           </span>
-          <span className="stat-chip">
+          <span className="stat-chip liquid-control-surface">
+            <LiquidGlass className="control-glass" />
             <strong>{nightsOut}</strong> {nightsOut === 1 ? 'night' : 'nights'} out
           </span>
         </div>
@@ -97,41 +100,47 @@ export function HomeScreen() {
           Budget, breakout sessions, and the Summit Opening Reception on the
           Terrace at 6:00 PM!
         </p>
-        <button className="home-link" onClick={() => goToTab('schedule')}>
+        <button className="home-link liquid-control" onClick={() => goToTab('schedule')}>
+          <LiquidGlass className="control-glass" />
           View my schedule
         </button>
 
-        <button className="offsite-card" onClick={openMap} aria-label="Open tonight nearby map">
-          <span className="offsite-icon">
-            <Icon path={mdiMapOutline} size={22} color={colors.green} />
-          </span>
+        <button
+          className="offsite-card liquid-control"
+          onClick={openMap}
+          aria-label="Open tonight nearby map"
+        >
+          <LiquidGlass className="control-glass" />
+          <Icon path={mdiMapOutline} size={24} color="currentColor" className="offsite-icon" />
           <span className="offsite-body">
             <span className="offsite-title">Tonight Nearby</span>
             <span className="offsite-sub">
               Dinners and meetups around the city — see who else is going
             </span>
           </span>
-          <Icon path={mdiChevronRight} size={20} color={colors.textSecondary} />
+          <Icon path={mdiChevronRight} size={20} color="currentColor" className="offsite-chevron" />
         </button>
 
         <div className="home-grid">
           {homeActions.map((action, i) => (
             <button
               key={action.id}
-              className="home-tile"
+              className="home-tile liquid-control"
               style={{ animationDelay: `${i * 45}ms` }}
               onClick={TILE_TARGETS[action.id]}
             >
-              <Icon path={action.icon} size={34} color={colors.textDark} />
+              <LiquidGlass className="control-glass" />
+              <Icon path={action.icon} size={28} color="currentColor" />
               <span className="home-tile-label">{action.label}</span>
             </button>
           ))}
         </div>
 
         <button
-          className="happening-card"
+          className="happening-card liquid-control"
           onClick={() => openOverlay({ kind: 'session', sessionId: 'reception' } satisfies Overlay)}
         >
+          <LiquidGlass className="control-glass" />
           <span className="happening-kicker">
             <span className="live-dot" /> Up next
           </span>

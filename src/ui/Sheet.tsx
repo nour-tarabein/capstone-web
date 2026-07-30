@@ -9,6 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
+import { LiquidGlass } from '../components/LiquidGlass';
 
 /**
  * The one bottom sheet. Slides up on mount, fades its backdrop, dismisses on
@@ -98,6 +99,7 @@ export function Sheet({
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
+        <LiquidGlass className="sheet-glass" frost={14} />
         <div
           className="sheet-handle"
           onPointerDown={onHandleDown}
