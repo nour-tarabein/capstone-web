@@ -2632,33 +2632,165 @@ button:active {
   resize: vertical;
 }
 
-/* ---- welcome / check-in screen ---- */
+/* ---- welcome / check-in screen ----
+   The first screen an attendee ever sees: an animated light-ripple shader
+   fills the layer and the form floats over it on refractive glass. */
+.welcome-screen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.welcome-shader {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #000;
+}
+
+/* Darkens the ripple toward the middle so the form reads cleanly, while the
+   glow stays bright at the edges. */
+.welcome-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      98% 68% at 50% 46%,
+      rgba(4, 12, 9, 0.46) 0%,
+      rgba(4, 12, 9, 0.24) 52%,
+      rgba(4, 12, 9, 0.04) 82%,
+      transparent 100%
+    );
+}
+
 .welcome-content {
-  padding: calc(env(safe-area-inset-top) + 56px) 20px 24px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top) + 28px) 20px
+    calc(env(safe-area-inset-bottom) + 28px);
+}
+
+.welcome-card {
+  /* `margin: auto` (not justify-content) centres a flex child inside a scroll
+     container without making overflow unreachable. */
+  margin: auto 0;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 420px;
+  padding: 26px 22px 24px;
+  border-radius: 28px;
+  /* The dual rim — bright 1px border, white inset top highlight, dark inset
+     bottom edge — is what reads as curvature rather than a flat panel. */
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.42) inset,
+    1px 0 0 rgba(255, 255, 255, 0.14) inset,
+    -1px 0 0 rgba(255, 255, 255, 0.14) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.42) inset,
+    0 26px 64px rgba(0, 0, 0, 0.5);
+}
+
+/* Rule: the card stays transparent so this layer can sample the shader behind
+   it, and z-index -1 keeps every label, field, and text node sharp above the
+   lens. The tint lives here, not on the card. */
+.welcome-card-glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: rgba(232, 255, 246, 0.1);
+  /* Specular sweep off the top-left corner, never ending in a dark corner. */
+  background-image: radial-gradient(
+    125% 95% at 6% -24%,
+    rgba(255, 255, 255, 0.26) 0%,
+    rgba(255, 255, 255, 0.09) 36%,
+    transparent 68%
+  );
+}
+
+.welcome-card > *:not(.welcome-card-glass) {
+  animation: welcome-rise 0.5s var(--ease-spring) backwards;
+}
+
+.welcome-card > .welcome-heading {
+  animation-delay: 0.06s;
+}
+
+.welcome-card > .welcome-fields {
+  animation-delay: 0.14s;
+}
+
+.welcome-card > .welcome-submit {
+  animation-delay: 0.22s;
+}
+
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .welcome-heading {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.welcome-eyebrow {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
 }
 
 .welcome-title {
+  margin: 10px 0 0;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 27px;
+  line-height: 1.16;
   font-weight: 700;
+  letter-spacing: -0.3px;
   color: var(--text);
 }
 
 .welcome-subtitle {
-  margin-top: 8px;
+  margin-top: 10px;
   color: var(--text-secondary);
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.45;
+}
+
+/* Translucent fields let the ripple read faintly through the card. */
+.welcome-card .field-input {
+  background: rgba(6, 16, 13, 0.44);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.welcome-card .field-input:focus {
+  border-color: var(--green);
 }
 
 .welcome-error {
   margin-top: 12px;
   color: var(--notification);
   font-size: 13px;
+  text-align: center;
+}
+
+.welcome-submit {
+  margin-top: 22px;
 }
 
 .host-submitted {

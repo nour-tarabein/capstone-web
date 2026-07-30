@@ -90,6 +90,7 @@ export function LiquidGlass({
   className,
   style,
   frost = 1,
+  refraction = 1,
   wobble,
 }: {
   className?: string;
@@ -97,6 +98,10 @@ export function LiquidGlass({
   /** Blur (px) layered under the refraction — raise it when sharp backdrop
       content would fight the foreground (sheets, headers). */
   frost?: number;
+  /** Multiplies how far the backdrop bends at the rim. 1 is the tuned default
+      for small chrome; raise it on large surfaces, where the same displacement
+      spread over a longer edge otherwise reads as flat. */
+  refraction?: number;
   /** When this value changes, the refraction briefly overshoots and rings
       down — the glass "settles". Pass e.g. the active tab id. */
   wobble?: string | number;
@@ -107,6 +112,9 @@ export function LiquidGlass({
   const dispRef = useRef<SVGFEDisplacementMapElement>(null);
   const mapRef = useRef<DisplacementMap | null>(null);
   mapRef.current = map;
+  // Read through a ref so changing the strength doesn't re-trigger a wobble.
+  const refractionRef = useRef(refraction);
+  refractionRef.current = refraction;
   const wobbledOnce = useRef(false);
 
   useEffect(() => {
@@ -144,15 +152,16 @@ export function LiquidGlass({
     const current = mapRef.current;
     const el = dispRef.current;
     if (!current || !el) return;
+    const settled = current.scale * refractionRef.current;
     const start = performance.now();
     let frame = requestAnimationFrame(function tick(now: number) {
       const t = Math.min((now - start) / WOBBLE_MS, 1);
-      el.setAttribute('scale', String(current.scale * (t < 1 ? wobbleCurve(t) : 1)));
+      el.setAttribute('scale', String(settled * (t < 1 ? wobbleCurve(t) : 1)));
       if (t < 1) frame = requestAnimationFrame(tick);
     });
     return () => {
       cancelAnimationFrame(frame);
-      el.setAttribute('scale', String(current.scale));
+      el.setAttribute('scale', String(settled));
     };
   }, [wobble]);
 
@@ -176,7 +185,7 @@ export function LiquidGlass({
                 ref={dispRef}
                 in="SourceGraphic"
                 in2="map"
-                scale={map.scale}
+                scale={map.scale * refraction}
                 xChannelSelector="R"
                 yChannelSelector="G"
               />
