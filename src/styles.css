@@ -3426,7 +3426,26 @@ button:active {
 .shell {
   isolation: isolate;
   overflow: clip;
-  background:
+  /* Refraction can only show up if there is something behind the glass to
+     bend, and the tab bar gets that for free — it floats over the scrolling
+     list, so it refracts real text. In-flow cards only ever have this scene
+     behind them, and the two big scene gradients are far too smooth to distort
+     visibly: a lens displaces by ~10px at its rim, so anything that takes
+     300px to change tone comes out looking identical.
+
+     Hence the sparse field of small glows below. They're placed irregularly
+     rather than tiled so it reads as atmosphere, and sized so their tone
+     changes over 60–150px — the range a card-sized lens actually bends. */
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle 120px at 8% 13%, rgba(79, 209, 160, 0.1), transparent 70%),
+    radial-gradient(circle 90px at 73% 7%, rgba(157, 148, 73, 0.08), transparent 70%),
+    radial-gradient(circle 140px at 93% 31%, rgba(79, 209, 160, 0.07), transparent 72%),
+    radial-gradient(circle 100px at 22% 41%, rgba(116, 128, 54, 0.07), transparent 70%),
+    radial-gradient(circle 130px at 61% 54%, rgba(79, 209, 160, 0.08), transparent 72%),
+    radial-gradient(circle 80px at 13% 69%, rgba(79, 209, 160, 0.06), transparent 70%),
+    radial-gradient(circle 150px at 89% 76%, rgba(157, 148, 73, 0.06), transparent 72%),
+    radial-gradient(circle 110px at 42% 91%, rgba(79, 209, 160, 0.07), transparent 70%),
     radial-gradient(110% 58% at 18% -4%, rgba(39, 139, 99, 0.13), transparent 58%),
     radial-gradient(78% 54% at 108% 82%, rgba(116, 128, 54, 0.06), transparent 64%),
     linear-gradient(155deg, var(--bg-secondary) 0%, var(--bg) 46%, #020704 100%);
@@ -3442,8 +3461,12 @@ button:active {
   z-index: 0;
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(64px);
-  opacity: 0.22;
+  /* Was blur(64px), which spread these so far they had no edge left to refract.
+     At 30px they still read as soft atmosphere but their falloff happens over
+     ~60px, so a card rim passing over one visibly bends it — and because they
+     drift, that bend moves. */
+  filter: blur(30px);
+  opacity: 0.26;
   will-change: transform;
   animation: atmosphere-drift 14s ease-in-out infinite;
 }
@@ -4070,6 +4093,15 @@ button.rsvp-going {
       rgba(255, 255, 255, 0.035) 72%,
       rgba(0, 0, 0, 0.08) 100%
     );
+  /* The rim has to be drawn *on* the lens. Inset shadows paint with their
+     element's background, which for a host with a z-index:-1 glass child means
+     underneath the lens — so the bright top edge and dark bottom edge that
+     sell curvature were coming out refracted and smeared instead of crisp. */
+  box-shadow:
+    0 1px 0.5px rgba(255, 255, 255, 0.38) inset,
+    0 -1px 0.5px rgba(0, 0, 0, 0.32) inset,
+    1px 0 0.5px rgba(255, 255, 255, 0.1) inset,
+    -1px 0 0.5px rgba(255, 255, 255, 0.08) inset;
   transition: background-color 0.2s ease;
 }
 
@@ -4088,36 +4120,75 @@ button.rsvp-going {
   -webkit-backdrop-filter: none;
 }
 
-/* The home cards read as sheets of curved glass rather than smoked panels:
-   a much thinner fill, a brighter rim, and a top-left specular sweep instead
-   of the default button gradient's dark corner. (button:is keeps specificity
-   level with the global button chrome so this later rule wins.) */
+/* The home cards read as sheets of curved glass rather than smoked panels.
+   The host contributes only its border and cast shadow — everything optical
+   lives on the .control-glass lens — because `backdrop-filter` samples whatever
+   is painted beneath the glass layer, the host's own background included. A
+   fill on both therefore counts twice: 0.09 refracted through the lens plus
+   0.09 painted over it lands near 0.17 white, which is exactly the smoked-
+   plastic look.
+
+   The surviving fill is *dark*, copied from .tab-bar-glass — that's the other
+   half of why the tab bar reads as glass and these read as plastic. A white
+   veil lightens the backdrop toward mid-gray, which is where refraction goes to
+   die: bent mid-gray still looks like mid-gray. A dark tint keeps the backdrop
+   dark and leaves the bright rim as the only light in the surface, so the eye
+   reads a thin curved edge instead of a filled panel.
+
+   (button:is keeps specificity level with the global button chrome so this
+   later rule wins.) */
 button:is(.offsite-card, .home-tile, .happening-card),
 .stat-chip {
-  --liquid-control-fill: rgba(255, 255, 255, 0.09);
-  --liquid-control-fill-hover: rgba(255, 255, 255, 0.14);
-  --liquid-control-edge: rgba(255, 255, 255, 0.24);
-  --liquid-control-edge-bright: rgba(255, 255, 255, 0.42);
-  background-color: var(--liquid-control-fill);
-  background-image:
-    radial-gradient(
-      130% 100% at 12% -25%,
-      rgba(255, 255, 255, 0.2) 0%,
-      rgba(255, 255, 255, 0.05) 38%,
-      transparent 64%
-    ),
-    linear-gradient(
-      160deg,
-      rgba(255, 255, 255, 0.09) 0%,
-      transparent 40%,
-      rgba(255, 255, 255, 0.03) 100%
-    );
+  --liquid-control-fill: rgba(7, 19, 15, 0.3);
+  --liquid-control-fill-hover: rgba(9, 26, 20, 0.42);
+  --liquid-control-edge: rgba(255, 255, 255, 0.2);
+  --liquid-control-edge-bright: rgba(255, 255, 255, 0.36);
+  background-color: transparent;
+  background-image: none;
   border-color: var(--liquid-control-edge);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    1px 0 0 rgba(255, 255, 255, 0.09) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.24) inset,
-    0 14px 34px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+/* Same reasoning as the dark fill: the shared lens paints a white sweep across
+   its whole surface, which over a card this large is another milky veil. The
+   tab bar has none — so trim it to a tight corner highlight and let the rim do
+   the work. */
+button:is(.offsite-card, .home-tile, .happening-card) > .control-glass,
+.stat-chip > .control-glass {
+  background-image: radial-gradient(
+    120% 100% at 10% -30%,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 30%,
+    transparent 58%
+  );
+}
+
+/* The lens carries the specular sweep now; a second diagonal sheen on the host
+   is just another veil between the viewer and the refracted backdrop. */
+.offsite-card::before {
+  display: none;
+}
+
+/* The top-light layer is press feedback (it brightens on hover/active). At
+   ambient level across a card this large it flattens the glass, so keep it low
+   until the control is actually touched. */
+button:is(.offsite-card, .home-tile, .happening-card)::after {
+  opacity: 0.07;
+}
+
+@media (hover: hover) {
+  /* Hover brightens the rim and lifts the shadow; the tint change goes on the
+     lens so hovering can't reintroduce the double fill. */
+  button:is(.offsite-card, .home-tile, .happening-card):not(:disabled):hover {
+    background-color: transparent;
+    border-color: var(--liquid-control-edge-bright);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
+  }
+
+  .liquid-control:not(:disabled):hover > .control-glass,
+  .stat-chip:hover > .control-glass {
+    background-color: var(--liquid-control-fill-hover);
+  }
 }
 
 /* Floats over the map, so let the tiles refract through translucent jade
