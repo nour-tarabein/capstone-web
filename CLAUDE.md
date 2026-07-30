@@ -62,6 +62,8 @@ Plain CSS in `src/styles.css`. Theme colors are in `src/theme.ts` (used inline i
 
 The map screen uses **Leaflet** with CARTO's dark basemap — no Mapbox token needed. This is a deliberate divergence from the mobile app (which uses Mapbox in a WebView).
 
+More's Location card previews the same basemap without a second Leaflet instance: `src/mapTiles.ts` holds the tile URL template (shared with the map screen) plus pure slippy-map arithmetic, and `src/components/VenueMapPreview.tsx` lays the resulting tiles out as plain `<img>` elements with the venue pin on top.
+
 ### Build / deploy
 
 The app deploys to **Vercel**, which builds from the default branch on push — there is no deploy workflow in this repo.

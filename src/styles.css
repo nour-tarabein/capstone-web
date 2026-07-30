@@ -1117,15 +1117,41 @@ button:active {
   position: relative;
   width: 100%;
   aspect-ratio: 804 / 506;
-  background: #e8eef2;
+  /* The dark the CARTO tiles fade in over, so a slow network never flashes
+     a light rectangle at the same tiles the map screen shows. */
+  background: var(--bg);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 14px;
+}
+
+/* Static tile mosaic, offset inline so the venue lands on the card's centre
+   (src/components/VenueMapPreview.tsx). No Leaflet instance here. */
+.location-map-tiles {
+  position: absolute;
+  display: block;
+}
+
+/* Size comes from the img width/height attributes, i.e. from TILE_SIZE. */
+.location-map-tiles img {
+  position: absolute;
+  display: block;
+}
+
+/* Centres the map screen's .venue-pin on the card without touching its rules. */
+.location-map-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .location-map-chip {
+  /* Positioned so it paints above the tiles behind it. */
+  position: relative;
   background: rgba(14, 21, 18, 0.72);
   color: var(--text);
   font-size: 13px;
