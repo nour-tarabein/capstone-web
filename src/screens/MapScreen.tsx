@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
 import L from 'leaflet';
-import { mdiChevronLeft, mdiPlus, mdiWeatherNight } from '@mdi/js';
+import { mdiChevronLeft, mdiPlus } from '@mdi/js';
 import { goBack } from '../App';
 import { EventSheet } from '../components/EventSheet';
 import { LiquidGlass } from '../components/LiquidGlass';
@@ -16,6 +17,16 @@ import { formatTime, sourceColors, sourceLabels, sourceNeedsDarkText } from '../
 import { CARTO_DARK_TILE_URL, CARTO_SUBDOMAINS, MAP_DEFAULT_ZOOM } from '../mapTiles';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+
+function fullNightLabel(night: string): string {
+  const date = new Date(`${night}T12:00:00Z`);
+  return Number.isNaN(date.getTime())
+    ? (nightLabels[night] ?? night)
+    : new Intl.DateTimeFormat('en-US', {
+        weekday: 'long',
+        timeZone: 'UTC',
+      }).format(date);
+}
 
 /**
  * The web port of the app's single map. Mapbox-in-a-WebView becomes Leaflet
@@ -41,6 +52,7 @@ export function MapScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const markerRootsRef = useRef<Root[]>([]);
   const stripRef = useRef<HTMLDivElement>(null);
 
   const activeConferenceId = useActiveConferenceId();
@@ -49,7 +61,6 @@ export function MapScreen() {
   const [night, setNight] = useState<string | null>(null);
   const [events, setEvents] = useState<OffsiteEvent[]>([]);
   const [goingCounts, setGoingCounts] = useState<Record<string, number>>({});
-  const [showTonight, setShowTonight] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [openEventId, setOpenEventId] = useState<string | null>(null);
   const [hosting, setHosting] = useState(false);
@@ -104,10 +115,20 @@ export function MapScreen() {
       maxZoom: 19,
     }).addTo(map);
 
+    const venueHost = document.createElement('div');
+    const venueRoot = createRoot(venueHost);
+    venueRoot.render(
+      <span className="venue-pin">
+        <LiquidGlass className="venue-pin-glass" frost={1} refraction={1.4} />
+        <span className="venue-pin-ring" />
+        <span className="venue-pin-dot" />
+      </span>,
+    );
+
     L.marker([conference.venueLat, conference.venueLng], {
       icon: L.divIcon({
         className: '',
-        html: '<div class="venue-pin"><div class="venue-pin-ring"></div><div class="venue-pin-dot"></div></div>',
+        html: venueHost,
         iconSize: [22, 22],
         iconAnchor: [11, 11],
       }),
@@ -119,6 +140,9 @@ export function MapScreen() {
     setMapReady(true);
 
     return () => {
+      // This cleanup runs during React's commit. Defer the nested marker root
+      // so React never tries to synchronously tear down one root from another.
+      queueMicrotask(() => venueRoot.unmount());
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
@@ -159,30 +183,60 @@ export function MapScreen() {
   useEffect(() => {
     const layer = markersRef.current;
     if (!layer || !mapReady) return;
+    const previousRoots = markerRootsRef.current;
+    markerRootsRef.current = [];
+    queueMicrotask(() => previousRoots.forEach((root) => root.unmount()));
     layer.clearLayers();
-    if (!showTonight) return;
 
     events.forEach((event, i) => {
       const count = goingCounts[event.id] ?? 0;
       const selected = event.id === selectedEventId;
       const dark = sourceNeedsDarkText[event.source];
       const color = sourceColors[event.source];
+      const markerHost = document.createElement('div');
+      const markerRoot = createRoot(markerHost);
+      markerRoot.render(
+        <span
+          className="pin-drop"
+          style={
+            {
+              animationDelay: `${i * 55}ms`,
+              '--pin-color': color,
+              '--pin-ink': dark ? '#07130f' : '#ffffff',
+            } as CSSProperties
+          }
+        >
+          {selected ? <span className="map-pin-halo" /> : null}
+          <span className={selected ? 'map-pin map-pin-selected' : 'map-pin'}>
+            <LiquidGlass
+              className="map-pin-glass"
+              frost={1}
+              refraction={selected ? 1.8 : 1.35}
+              wobble={selected ? event.id : undefined}
+            />
+            <span className="map-pin-count">{count > 0 ? count : ''}</span>
+          </span>
+        </span>,
+      );
+      markerRootsRef.current.push(markerRoot);
+
       const icon = L.divIcon({
         className: '',
-        html:
-          `<div class="pin-drop" style="animation-delay:${i * 55}ms">` +
-          (selected ? `<div class="map-pin-halo" style="background:${color}"></div>` : '') +
-          `<div class="map-pin${selected ? ' map-pin-selected' : ''}" ` +
-          `style="background:${color};color:${dark ? '#111111' : '#FFFFFF'};--pin-glow:${color}66">` +
-          `${count > 0 ? count : ''}</div></div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
+        html: markerHost,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
       });
       L.marker([event.lat, event.lng], { icon, riseOnHover: true })
         .on('click', () => select(event.id, true))
         .addTo(layer);
     });
-  }, [events, goingCounts, selectedEventId, showTonight, select, mapReady]);
+
+    return () => {
+      const roots = markerRootsRef.current;
+      markerRootsRef.current = [];
+      queueMicrotask(() => roots.forEach((root) => root.unmount()));
+    };
+  }, [events, goingCounts, selectedEventId, select, mapReady]);
 
   // Fit the night's slate plus the venue, leaving room for the floating chrome.
   useEffect(() => {
@@ -210,10 +264,15 @@ export function MapScreen() {
           onClick={goBack}
           aria-label="Close map"
         >
-          <LiquidGlass className="control-glass" />
+          <LiquidGlass className="control-glass map-chrome-glass" />
           <Icon path={mdiChevronLeft} size={22} color={colors.text} />
         </button>
-        <div className="map-header-text glass-panel">
+        <div className="map-header-text glass-panel liquid-control-surface">
+          <LiquidGlass
+            className="control-glass map-chrome-glass map-header-glass"
+            frost={10}
+            refraction={1.25}
+          />
           <div className="map-title">Tonight Nearby</div>
           <div className="map-subtitle">
             {conference
@@ -225,23 +284,8 @@ export function MapScreen() {
       </header>
 
       <div className="map-overlay-top">
-        <div className="chip-row">
-          <button
-            className={showTonight ? 'chip chip-active liquid-control' : 'chip liquid-control'}
-            onClick={() => setShowTonight((v) => !v)}
-          >
-            <LiquidGlass className="control-glass" />
-            <Icon
-              path={mdiWeatherNight}
-              size={14}
-              color={showTonight ? colors.textDark : colors.text}
-            />
-            Tonight
-          </button>
-        </div>
-
-        {showTonight && conference ? (
-          <div className="nights-row">
+        {conference ? (
+          <div className="nights-row" role="group" aria-label="Event days">
             {conference.nights.map((n) => (
               <button
                 key={n}
@@ -251,16 +295,22 @@ export function MapScreen() {
                     : 'night-chip liquid-control'
                 }
                 onClick={() => setNight(n)}
+                aria-pressed={n === night}
               >
-                <LiquidGlass className="control-glass" />
-                {nightLabels[n] ?? n}
+                <LiquidGlass
+                  className="control-glass map-chrome-glass"
+                  frost={3}
+                  refraction={1.2}
+                  wobble={night ?? undefined}
+                />
+                {fullNightLabel(n)}
               </button>
             ))}
           </div>
         ) : null}
       </div>
 
-      {showTonight && events.length > 0 && conference ? (
+      {events.length > 0 && conference ? (
         <div className="map-bottom">
           <div className="persona-row">
             <div className="persona-scroll">

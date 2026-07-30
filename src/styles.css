@@ -1619,8 +1619,16 @@ button:active {
 }
 
 .map-header-text {
+  position: relative;
+  isolation: isolate;
   flex: 1;
   text-align: center;
+  overflow: hidden;
+  border-color: rgba(205, 255, 234, 0.24);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.28) inset,
+    0 12px 30px rgba(0, 0, 0, 0.24);
 }
 
 .map-title {
@@ -1642,6 +1650,9 @@ button:active {
   left: 12px;
   right: 12px;
   z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   pointer-events: none;
   animation: overlay-drop 0.4s var(--ease-spring);
 }
@@ -1675,7 +1686,8 @@ button:active {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
   border-radius: 999px;
-  padding: 8px 13px;
+  min-height: 40px;
+  padding: 8px 15px;
   color: var(--text);
   font-size: 12px;
   font-weight: 600;
@@ -1692,7 +1704,9 @@ button:active {
 .nights-row {
   display: flex;
   gap: 6px;
-  margin-top: 10px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0;
   background: var(--glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1702,9 +1716,11 @@ button:active {
 }
 
 .night-chip {
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 112px;
+  min-height: 40px;
   text-align: center;
-  padding: 8px 0;
+  padding: 8px 16px;
   border-radius: 10px;
   border: 1px solid transparent;
   color: var(--text-secondary);
@@ -2033,6 +2049,9 @@ button:active {
 /* ---- map pins ---- */
 .pin-drop {
   position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
   animation: pin-drop 0.45s var(--ease-spring) backwards;
 }
 
@@ -2048,29 +2067,70 @@ button:active {
 }
 
 .map-pin {
-  width: 28px;
-  height: 28px;
-  border-radius: 14px;
+  position: relative;
+  isolation: isolate;
+  width: 32px;
+  height: 32px;
+  margin: 1px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  border: 2px solid rgba(0, 0, 0, 0.35);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55), 0 0 12px var(--pin-glow, transparent);
+  color: var(--pin-ink, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--pin-color) 48%, rgba(255, 255, 255, 0.7));
+  background: transparent;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.66) inset,
+    1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.36) inset,
+    0 6px 16px rgba(0, 0, 0, 0.46),
+    0 0 14px color-mix(in srgb, var(--pin-color) 30%, transparent);
   transition: transform 0.2s var(--ease-spring);
 }
 
+.map-pin-glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      100% 78% at 26% 5%,
+      rgba(255, 255, 255, 0.42),
+      rgba(255, 255, 255, 0.08) 42%,
+      transparent 68%
+    ),
+    color-mix(in srgb, var(--pin-color) 48%, rgba(6, 15, 12, 0.42));
+}
+
+.map-pin-count {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.34);
+}
+
 .map-pin-selected {
-  transform: scale(1.3);
-  border-color: #ffffff;
+  transform: scale(1.24);
+  border-color: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.32) inset,
+    0 8px 20px rgba(0, 0, 0, 0.48),
+    0 0 20px color-mix(in srgb, var(--pin-color) 52%, transparent);
 }
 
 .map-pin-halo {
   position: absolute;
-  inset: -6px;
+  inset: -5px;
   border-radius: 999px;
-  opacity: 0.35;
+  border: 1px solid color-mix(in srgb, var(--pin-color) 72%, white);
+  background: color-mix(in srgb, var(--pin-color) 12%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--pin-color) 32%, transparent);
+  opacity: 0.72;
   animation: halo 1.4s ease-out infinite;
 }
 
@@ -2087,13 +2147,30 @@ button:active {
 
 .venue-pin {
   position: relative;
+  isolation: isolate;
   width: 22px;
   height: 22px;
   border-radius: 11px;
-  background: rgba(79, 209, 160, 0.25);
+  background: transparent;
+  border: 1px solid rgba(220, 255, 242, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.58) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.28) inset,
+    0 5px 14px rgba(0, 0, 0, 0.38);
+}
+
+.venue-pin-glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 30% 12%, rgba(255, 255, 255, 0.4), transparent 48%),
+    rgba(79, 209, 160, 0.22);
 }
 
 .venue-pin-ring {
@@ -2109,8 +2186,8 @@ button:active {
   height: 10px;
   border-radius: 5px;
   background: var(--green);
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 10px rgba(79, 209, 160, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 10px rgba(79, 209, 160, 0.68);
 }
 
 /* ---- bottom sheets ---- */
@@ -3943,7 +4020,12 @@ button:active {
 }
 
 .map-pin {
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.58);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.66) inset,
+    1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.36) inset,
+    0 6px 16px rgba(0, 0, 0, 0.46),
+    0 0 14px color-mix(in srgb, var(--pin-color) 30%, transparent);
 }
 
 .map-pin-selected {
@@ -3955,7 +4037,7 @@ button:active {
 }
 
 .venue-pin {
-  background: rgba(79, 209, 160, 0.18);
+  background: transparent;
 }
 
 .venue-pin-ring {
@@ -3965,7 +4047,7 @@ button:active {
 
 .venue-pin-dot {
   border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: none;
+  box-shadow: 0 0 10px rgba(79, 209, 160, 0.6);
 }
 
 .gate-lock {
@@ -4530,9 +4612,42 @@ button.liquid-control:hover > .control-glass {
   background: linear-gradient(transparent, rgba(4, 10, 7, 0.62));
 }
 
+.map-screen .nights-row {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.map-screen .night-chip {
+  --liquid-control-fill: rgba(255, 255, 255, 0.14);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.18);
+  --liquid-control-edge: rgba(255, 255, 255, 0.34);
+  --liquid-control-edge-bright: rgba(255, 255, 255, 0.48);
+  color: var(--text);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.42) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.26) inset,
+    0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
 .map-screen .night-chip-active {
-  --liquid-control-fill: rgba(79, 209, 160, 0.2);
-  --liquid-control-fill-hover: rgba(79, 209, 160, 0.28);
+  --liquid-control-fill: rgba(79, 209, 160, 0.28);
+  --liquid-control-fill-hover: rgba(79, 209, 160, 0.34);
+  --liquid-control-edge: rgba(149, 244, 207, 0.76);
+  --liquid-control-edge-bright: rgba(205, 255, 234, 0.82);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.52) inset,
+    1px 0 0 rgba(255, 255, 255, 0.16) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.26) inset,
+    0 0 0 1px rgba(79, 209, 160, 0.2),
+    0 0 16px rgba(79, 209, 160, 0.14),
+    0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 .map-screen .glass-button {
@@ -4540,9 +4655,16 @@ button.liquid-control:hover > .control-glass {
   --liquid-control-fill-hover: rgba(255, 255, 255, 0.18);
 }
 
-.map-screen .chip-active {
-  --liquid-control-fill: rgba(79, 209, 160, 0.78);
-  --liquid-control-fill-hover: rgba(79, 209, 160, 0.88);
+/* Keep the map's top chrome in one clean material system. The map itself
+   supplies all of the optical movement, so these controls use a clear tint
+   instead of an extra painted gradient. */
+.map-screen .map-chrome-glass {
+  background-image: none;
+}
+
+.map-screen .map-header-glass {
+  --liquid-control-fill: rgba(7, 19, 15, 0.48);
+  background-color: rgba(7, 19, 15, 0.48);
 }
 
 /* Event cards are deliberately milkier than the small chrome: the brighter
