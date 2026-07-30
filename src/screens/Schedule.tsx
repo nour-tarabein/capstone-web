@@ -66,19 +66,19 @@ export function ScheduleScreen() {
     <div className="screen">
       <ScreenHeader title="Schedule" showSearch />
 
-      <div className="top-tabs">
-        {scheduleTabs.map((tab) => (
-          <LiquidButton
-            key={tab}
-            className={tab === activeTab ? 'top-tab top-tab-active' : 'top-tab'}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </LiquidButton>
-        ))}
-      </div>
-
       <div className="screen-scroll schedule-content">
+        <div className="top-tabs">
+          {scheduleTabs.map((tab) => (
+            <LiquidButton
+              key={tab}
+              className={tab === activeTab ? 'top-tab top-tab-active' : 'top-tab'}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </LiquidButton>
+          ))}
+        </div>
+
         {promoOpen ? (
           <div className="promo-card glass-card liquid-control-surface">
             <LiquidGlass className="control-glass" />
@@ -111,12 +111,7 @@ export function ScheduleScreen() {
           </LiquidButton>
         )}
 
-        {/* Pinned to the top of the list. Keeps the day and track filters in
-            reach while you scan, and gives the glass the one thing an in-flow
-            surface never has: session cards moving behind it to refract. */}
         <div className="schedule-filters">
-          <LiquidGlass className="schedule-filters-glass" frost={14} />
-
           <div className="day-row">
             {scheduleDays.map((day) => (
               <LiquidButton
