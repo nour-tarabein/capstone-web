@@ -17,8 +17,8 @@ describe('shouldShowPersonaSwitcher', () => {
     expect(shouldShowPersonaSwitcher(tysonsConference.id, false)).toBe(false)
   })
 
-  it('is shown for an admin Tysons attendee', () => {
-    expect(shouldShowPersonaSwitcher(tysonsConference.id, true)).toBe(true)
+  it('is hidden for an admin Tysons attendee', () => {
+    expect(shouldShowPersonaSwitcher(tysonsConference.id, true)).toBe(false)
   })
 
   it('is always shown on Austin, admin or not', () => {
