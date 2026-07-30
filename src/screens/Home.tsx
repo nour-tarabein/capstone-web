@@ -110,11 +110,7 @@ export function HomeScreen() {
           onClick={openMap}
           aria-label="Open tonight nearby map"
         >
-          {/* Pinned to the top of the scroll (see .home-content > .offsite-card),
-              so unlike the other cards it has the tile grid sliding behind it.
-              Heavier frost than the default 1: that content needs to blur enough
-              for this card's own label to stay readable over it. */}
-          <LiquidGlass className="control-glass" frost={14} />
+          <LiquidGlass className="control-glass" />
           <Icon path={mdiMapOutline} size={24} color="currentColor" className="offsite-icon" />
           <span className="offsite-body">
             <span className="offsite-title">Tonight Nearby</span>
