@@ -15,13 +15,11 @@ export function shouldShowOrganizerToggle(conferenceId: string): boolean {
 /**
  * Whether More's "Viewing as" persona switcher should render.
  *
- * Tysons hides it from non-admins — the allowlist match is the whole admin
- * story there, and letting anyone browse as another attendee would defeat
- * it. Once admin mode is on (via the allowlist), the switcher reappears so
- * an organizer can still spot-check other attendees' views. Austin is
- * unrestricted, same as today.
+ * The McLean/Tysons demo hides it for everyone, including organizers. Letting
+ * anyone browse as another attendee would undermine the identity established
+ * at check-in. Austin remains unrestricted for its presenter-driven demo.
  */
-export function shouldShowPersonaSwitcher(conferenceId: string, adminMode: boolean): boolean {
-  if (conferenceId === tysonsConference.id) return adminMode
+export function shouldShowPersonaSwitcher(conferenceId: string, _adminMode: boolean): boolean {
+  if (conferenceId === tysonsConference.id) return false
   return true
 }
