@@ -83,7 +83,7 @@ export function ExhibitorsScreen() {
     return (
       <LiquidButton
         key={item.id}
-        className="exhibitor-row"
+        className="exhibitor-row glass-card"
         onClick={() => openOverlay({ kind: 'exhibitor', exhibitorId: item.id })}
       >
         <span className="exhibitor-index">{label}</span>
@@ -194,7 +194,7 @@ export function ExhibitorsScreen() {
                   {list.map((e) => (
                     <LiquidButton
                       key={e.id}
-                      className="tier-card"
+                      className="tier-card glass-card"
                       onClick={() =>
                         openOverlay({ kind: 'exhibitor', exhibitorId: e.id })
                       }

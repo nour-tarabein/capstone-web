@@ -15,6 +15,7 @@ import { formatTime } from '../offsite/format';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+import { LiquidGlass } from '../components/LiquidGlass';
 
 /**
  * The organizer's side of the approval loop. One queue holds both attendee
@@ -80,8 +81,13 @@ export function ReviewQueueScreen() {
           return (
             <div
               key={event.id}
-              className={decision ? 'review-card review-card-decided' : 'review-card'}
+              className={
+                decision
+                  ? 'review-card review-card-decided glass-card liquid-control-surface'
+                  : 'review-card glass-card liquid-control-surface'
+              }
             >
+              <LiquidGlass className="control-glass" />
               <div className="review-card-head">
                 <SourceBadge source={event.source} />
                 <span className="review-when">
