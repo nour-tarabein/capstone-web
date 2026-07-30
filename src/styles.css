@@ -246,10 +246,6 @@ button:active {
   color: var(--green);
 }
 
-.screen-light .top-tab-underline-dark {
-  background: var(--green);
-}
-
 .screen-light .screen-header .icon-button {
   color: var(--text);
 }
@@ -532,53 +528,35 @@ button:active {
   font-size: 12px;
 }
 
-/* ---- top tabs (schedule, exhibitors) ---- */
+/* ---- top tabs (schedule, exhibitors) ----
+   Pills, like the day/category/filter chips, rather than a segmented bar. */
 .top-tabs {
   display: flex;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  padding: 8px 16px 10px;
 }
 
 .top-tabs-light {
   background: var(--surface-light);
-  border-bottom-color: var(--border-light);
-  padding: 0;
+  padding: 8px 16px 10px;
 }
 
 .top-tab {
   position: relative;
   flex: 1;
   text-align: center;
-  padding: 12px 0;
+  padding: 9px 0;
+  border-radius: 999px;
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
+  transition: background 0.2s, color 0.2s, border-color 0.2s,
+    transform 0.16s var(--ease-spring);
 }
 
+/* Fill and text color for the active pill live with the liquid-glass rules. */
 .top-tab-active {
-  color: var(--text);
   font-weight: 600;
-}
-
-.top-tab-underline {
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  right: 8px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--green);
-  box-shadow: 0 0 10px rgba(79, 209, 160, 0.6);
-  animation: underline-in 0.25s var(--ease-spring);
-}
-
-@keyframes underline-in {
-  from {
-    transform: scaleX(0.4);
-  }
-  to {
-    transform: scaleX(1);
-  }
 }
 
 .top-tab-light {
@@ -587,18 +565,7 @@ button:active {
 }
 
 .top-tab-light-active {
-  color: var(--text-dark);
   font-weight: 600;
-}
-
-.top-tab-underline-dark {
-  position: absolute;
-  bottom: 0;
-  left: 24px;
-  right: 24px;
-  height: 3px;
-  background: var(--text-dark);
-  animation: underline-in 0.25s var(--ease-spring);
 }
 
 /* ---- schedule ---- */
@@ -908,9 +875,11 @@ button:active {
 }
 
 .sort-button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  border-radius: 999px;
+  padding: 7px 13px;
   color: var(--text-muted-dark);
   font-size: 13px;
 }
@@ -3738,7 +3707,6 @@ button:active {
   animation: none;
 }
 
-.top-tab-underline,
 .day-chip-active,
 .chip-active,
 .toggle-on,
@@ -4025,7 +3993,9 @@ button:not([data-liquid='off']):active::after {
       .action-reject,
       .home-link,
       .icon-button,
-      .ai-chat-button
+      .ai-chat-button,
+      .top-tab,
+      .sort-button
     ):not(:disabled):hover {
     transform: translateY(-2px);
   }
@@ -4298,6 +4268,7 @@ button:is(
     .tier-card,
     .filter-chip,
     .sort-button,
+    .top-tab,
     .top-tab-light,
     .exit-button
   ) {
@@ -4315,6 +4286,29 @@ button:is(
     1px 0 0 rgba(255, 255, 255, 0.12) inset,
     0 -1px 0 rgba(0, 0, 0, 0.28) inset,
     0 14px 30px rgba(0, 0, 0, 0.26);
+}
+
+/* The selected tab is a jade pill, like the active day chip. Declared after
+   the neutral list above so it wins for .top-tab / .top-tab-light. */
+button:is(.top-tab-active, .top-tab-light-active) {
+  --liquid-control-fill: rgba(79, 209, 160, 0.78);
+  --liquid-control-fill-hover: rgba(79, 209, 160, 0.88);
+  --liquid-control-edge: rgba(205, 255, 234, 0.48);
+  --liquid-control-edge-bright: rgba(225, 255, 243, 0.72);
+  --liquid-control-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.48) inset,
+    1px 0 0 rgba(255, 255, 255, 0.16) inset,
+    0 -1px 0 rgba(2, 45, 30, 0.36) inset,
+    0 9px 24px rgba(0, 0, 0, 0.24);
+  --liquid-control-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.62) inset,
+    1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1px 0 rgba(2, 45, 30, 0.4) inset,
+    0 13px 30px rgba(0, 0, 0, 0.28);
+  background-color: var(--green);
+  /* Literal, not var(--text-dark): .screen-light flips that token to a near
+     white, which would leave the label unreadable on the jade fill. */
+  color: #07130f;
 }
 
 .screen-light {

@@ -110,7 +110,7 @@ export function ExhibitorsScreen() {
 
       <div className="top-tabs top-tabs-light">
         {tabs.map((tab) => (
-          <button
+          <LiquidButton
             key={tab}
             className={
               tab === activeTab
@@ -120,8 +120,7 @@ export function ExhibitorsScreen() {
             onClick={() => setActiveTab(tab)}
           >
             {tab}
-            {tab === activeTab ? <span className="top-tab-underline-dark" /> : null}
-          </button>
+          </LiquidButton>
         ))}
       </div>
 

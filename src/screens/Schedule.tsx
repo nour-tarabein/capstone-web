@@ -68,14 +68,13 @@ export function ScheduleScreen() {
 
       <div className="top-tabs">
         {scheduleTabs.map((tab) => (
-          <button
+          <LiquidButton
             key={tab}
             className={tab === activeTab ? 'top-tab top-tab-active' : 'top-tab'}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
-            {tab === activeTab ? <span className="top-tab-underline" /> : null}
-          </button>
+          </LiquidButton>
         ))}
       </div>
 
