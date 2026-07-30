@@ -3569,7 +3569,7 @@ button:active {
   filter: blur(30px);
   opacity: 0.26;
   will-change: transform;
-  animation: atmosphere-drift 14s ease-in-out infinite;
+  animation: atmosphere-drift 0.01ms ease-in-out infinite;
 }
 
 .shell::before {
