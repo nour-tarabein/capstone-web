@@ -570,17 +570,26 @@ button:active {
 
 /* ---- schedule ---- */
 .schedule-content {
-  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-bottom: 32px;
+  padding: 0 16px 32px;
 }
 
 /* Scroll content must keep its natural height — otherwise rows with their
    own overflow (the category chips) get crushed by flex shrinking. */
 .schedule-content > * {
   flex-shrink: 0;
+}
+
+.schedule-content > .top-tabs {
+  margin: 0 -16px;
+}
+
+.schedule-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .promo-card {
@@ -4410,58 +4419,6 @@ button.glass-card::after {
   .glass-card:hover > .control-glass {
     background-color: var(--liquid-control-fill-hover);
   }
-}
-
-/* ---- pinned glass ----
-   The tab bar refracts convincingly because it floats over the scrolling list:
-   real, high-contrast, *moving* text passes behind it. An in-flow card never
-   gets that no matter how the optics are tuned, because whatever is behind it
-   scrolls with it. Pinning buys the same thing the tab bar has for free.
-
-   This lives on Schedule, not Home. Home was the obvious place to try it and it
-   was the wrong one: its content runs ~920px against a ~864px scrollport, so
-   there are only ~56px of travel and a pinned element never visibly pins. The
-   session list here scrolls for thousands of pixels, and a filter bar is
-   something you actually want kept in reach while you scan it.
-
-   Paint order is the catch, and the fix for it is also what makes the effect
-   work. Session cards are buttons, so the global button chrome makes them
-   position: relative, and they come after this bar in the DOM — they would paint
-   over it. Lifting the bar above them puts them beneath it in paint order, which
-   is precisely what backdrop-filter samples. */
-.schedule-filters {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  /* Bleed back through .schedule-content's 16px padding so the glass spans the
-     full width, the way .tab-bar does, instead of floating as an inset slab. */
-  margin: 0 -16px;
-  padding: 10px 16px;
-}
-
-.schedule-filters-glass {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: rgba(7, 19, 15, 0.55);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.07) inset,
-    0 12px 26px rgba(0, 0, 0, 0.3);
-}
-
-/* The rows are plain divs, so they'd paint *below* the absolutely-positioned
-   lens and get refracted along with the backdrop. Raising them keeps the chips
-   sharp — the other half of the skill's two layering options, used here because
-   a negative z-index on the lens would sink it behind the bar's own background. */
-.schedule-filters > .day-row,
-.schedule-filters > .category-row {
-  position: relative;
-  z-index: 1;
-  margin-top: 0;
 }
 
 /* Floats over the map, so let the tiles refract through translucent jade
