@@ -28,6 +28,7 @@ import { useViewer } from '../offsite/viewerResolution';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+import { LiquidButton } from '../components/LiquidButton';
 
 /** Every More row opens its sheet — no dead ends on this screen. */
 const ROW_TARGETS: Record<string, Overlay['kind']> = {
@@ -89,34 +90,34 @@ export function MoreScreen() {
       <div className="screen-scroll">
         {moreMenuItems.map((item, index) => (
           <div key={item.id}>
-            <button className="more-row" onClick={() => openRow(item.id)}>
-              <Icon path={item.icon} size={24} color={colors.textDark} className="more-row-icon" />
+            <LiquidButton className="more-row" onClick={() => openRow(item.id)}>
+              <Icon path={item.icon} size={24} color={colors.green} className="more-row-icon" />
               <span className="more-row-label">{item.label}</span>
-              <Icon path={mdiChevronRight} size={18} color={colors.textMutedDark} />
-            </button>
+              <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
+            </LiquidButton>
             {index < moreMenuItems.length - 1 ? <div className="more-separator" /> : null}
           </div>
         ))}
 
         <div className="section-divider" />
 
-        <button className="more-section-header" onClick={() => setGeneralOpen((o) => !o)}>
+        <LiquidButton className="more-section-header" onClick={() => setGeneralOpen((o) => !o)}>
           <span className="more-section-title">General</span>
           <Icon
             path={generalOpen ? mdiChevronUp : mdiChevronDown}
             size={20}
-            color={colors.textMutedDark}
+            color={colors.textSecondary}
           />
-        </button>
+        </LiquidButton>
 
         {generalOpen
           ? moreGeneralItems.map((item, index) => (
               <div key={item.id}>
-                <button className="more-row" onClick={() => openRow(item.id)}>
-                  <Icon path={item.icon} size={24} color={colors.textDark} className="more-row-icon" />
+                <LiquidButton className="more-row" onClick={() => openRow(item.id)}>
+                  <Icon path={item.icon} size={24} color={colors.green} className="more-row-icon" />
                   <span className="more-row-label more-row-label-truncate">{item.label}</span>
-                  <Icon path={mdiChevronRight} size={18} color={colors.textMutedDark} />
-                </button>
+                  <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
+                </LiquidButton>
                 {index < moreGeneralItems.length - 1 ? (
                   <div className="more-separator" />
                 ) : null}
@@ -126,32 +127,32 @@ export function MoreScreen() {
 
         <div className="section-divider" />
 
-        <button className="more-section-header" onClick={() => setInviteOpen((o) => !o)}>
+        <LiquidButton className="more-section-header" onClick={() => setInviteOpen((o) => !o)}>
           <span className="more-section-title">Invite-only</span>
           <Icon
             path={inviteOpen ? mdiChevronUp : mdiChevronDown}
             size={20}
-            color={colors.textMutedDark}
+            color={colors.textSecondary}
           />
-        </button>
+        </LiquidButton>
 
         {inviteOpen
           ? moreInviteOnlyItems.map((item) => (
-              <button key={item.id} className="more-row" onClick={() => openRow(item.id)}>
-                <Icon path={item.icon} size={24} color={colors.textDark} className="more-row-icon" />
+              <LiquidButton key={item.id} className="more-row" onClick={() => openRow(item.id)}>
+                <Icon path={item.icon} size={24} color={colors.green} className="more-row-icon" />
                 <span className="more-row-label">{item.label}</span>
-                <Icon path={mdiChevronRight} size={18} color={colors.textMutedDark} />
-              </button>
+                <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
+              </LiquidButton>
             ))
           : null}
 
         <div className="section-divider" />
 
-        <button className="offsite-row" onClick={openMap} aria-label="Open tonight nearby map">
+        <LiquidButton className="offsite-row" onClick={openMap} aria-label="Open tonight nearby map">
           <Icon path={mdiMapOutline} size={22} color={colors.green} />
           <span className="offsite-row-text">Tonight Nearby</span>
           <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
-        </button>
+        </LiquidButton>
 
         {showPersonaSwitcher ? (
           <>
@@ -168,7 +169,7 @@ export function MoreScreen() {
                 {attendees.map((person) => {
                   const active = person.id === viewer.id;
                   return (
-                    <button
+                    <LiquidButton
                       key={person.id}
                       className={active ? 'persona persona-active' : 'persona'}
                       aria-pressed={active}
@@ -181,7 +182,7 @@ export function MoreScreen() {
                         <span>{person.name}</span>
                         <span className="persona-settings-meta">{person.company}</span>
                       </span>
-                    </button>
+                    </LiquidButton>
                   );
                 })}
               </div>
@@ -213,7 +214,7 @@ export function MoreScreen() {
         ) : null}
 
         {adminMode ? (
-          <button
+          <LiquidButton
             className="offsite-row"
             onClick={openReview}
             aria-label="Open the event review queue"
@@ -222,7 +223,7 @@ export function MoreScreen() {
             <span className="offsite-row-text">Review queue</span>
             {pendingCount > 0 ? <span className="pending-badge">{pendingCount}</span> : null}
             <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
-          </button>
+          </LiquidButton>
         ) : null}
 
         <div className="section-divider" />
@@ -252,7 +253,7 @@ export function MoreScreen() {
             {conferences.map((c) => {
               const active = c.id === activeConferenceId;
               return (
-                <button
+                <LiquidButton
                   key={c.id}
                   className={active ? 'persona persona-active' : 'persona'}
                   onClick={() => setActiveConferenceId(c.id)}
@@ -261,22 +262,22 @@ export function MoreScreen() {
                     <Icon
                       path={mdiMapMarkerOutline}
                       size={14}
-                      color={active ? colors.textDark : colors.textMutedDark}
+                          color={active ? colors.textDark : colors.textSecondary}
                     />
                   </span>
                   <span className="persona-settings-name">
                     <span>{c.city}</span>
                     <span className="persona-settings-meta">{c.venueName}</span>
                   </span>
-                </button>
+                </LiquidButton>
               );
             })}
           </div>
         </div>
 
-        <button className="exit-button" onClick={() => openOverlay({ kind: 'exit' })}>
+        <LiquidButton className="exit-button" onClick={() => openOverlay({ kind: 'exit' })}>
           Exit event
-        </button>
+        </LiquidButton>
       </div>
     </div>
   );

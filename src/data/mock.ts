@@ -1,6 +1,6 @@
 import {
   mdiAccountGroupOutline,
-  mdiAccountTie,
+  mdiAccountTieOutline,
   mdiAccountVoice,
   mdiCalendarMonthOutline,
   mdiHandCoinOutline,
@@ -16,7 +16,7 @@ import { conference, nightLabels } from '../offsite/fixtures/conference';
 import { sessionTitles } from '../offsite/fixtures/sessions';
 
 export const homeActions = [
-  { id: 'speakers', label: 'Speakers', icon: mdiAccountTie },
+  { id: 'speakers', label: 'Speakers', icon: mdiAccountTieOutline },
   { id: 'attendees', label: 'Attendees', icon: mdiAccountGroupOutline },
   { id: 'onDemand', label: 'On Demand', icon: mdiPlayCircleOutline },
   { id: 'exhibitors', label: 'Exhibitors', icon: mdiStorefrontOutline },
@@ -222,7 +222,7 @@ export const moreMenuItems = [
   { id: 'attendees', label: 'Attendees', icon: mdiAccountVoice },
   { id: 'activity', label: 'Activity Feed', icon: mdiMessageTextOutline },
   { id: 'sponsors', label: 'Sponsors', icon: mdiHandCoinOutline },
-  { id: 'speakers', label: 'Speakers', icon: mdiAccountTie },
+  { id: 'speakers', label: 'Speakers', icon: mdiAccountTieOutline },
   { id: 'onDemand', label: 'On Demand', icon: mdiPlayCircleOutline },
   { id: 'games', label: 'Game Center', icon: mdiTrophyOutline },
 ];

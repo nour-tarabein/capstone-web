@@ -7,6 +7,7 @@ import { openOverlay } from '../overlays';
 import { isFavorite, useFavoriteVersion } from '../sheets/ExhibitorSheet';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+import { LiquidButton } from '../components/LiquidButton';
 
 const tabs = ['Categories', 'List'] as const;
 const SPONSORSHIPS = ['Platinum', 'Gold', 'Silver'];
@@ -59,7 +60,7 @@ export function ExhibitorsScreen() {
     return (
       <div className="popover" role="menu">
         {[null, ...options].map((option) => (
-          <button
+          <LiquidButton
             key={option ?? 'all'}
             className="popover-item"
             role="menuitem"
@@ -72,7 +73,7 @@ export function ExhibitorsScreen() {
             {current === option ? (
               <Icon path={mdiCheck} size={16} color={colors.green} />
             ) : null}
-          </button>
+          </LiquidButton>
         ))}
       </div>
     );
@@ -80,7 +81,7 @@ export function ExhibitorsScreen() {
 
   function row(item: Exhibitor, label: string) {
     return (
-      <button
+      <LiquidButton
         key={item.id}
         className="exhibitor-row"
         onClick={() => openOverlay({ kind: 'exhibitor', exhibitorId: item.id })}
@@ -99,7 +100,7 @@ export function ExhibitorsScreen() {
             <span className="exhibitor-meta">{item.sponsorship}</span>
           ) : null}
         </span>
-      </button>
+      </LiquidButton>
     );
   }
 
@@ -128,37 +129,37 @@ export function ExhibitorsScreen() {
         <>
           <div className="filters-row">
             <div className="filter-anchor">
-              <button
+              <LiquidButton
                 className={sponsorship ? 'filter-chip filter-chip-set' : 'filter-chip'}
                 aria-expanded={menu === 'sponsorship'}
                 onClick={() => setMenu(menu === 'sponsorship' ? null : 'sponsorship')}
               >
                 {sponsorship ?? 'Sponsorship level'}
                 <Icon path={mdiChevronDown} size={14} color="currentColor" />
-              </button>
+              </LiquidButton>
               {menu === 'sponsorship' ? filterMenu('sponsorship') : null}
             </div>
             <div className="filter-anchor">
-              <button
+              <LiquidButton
                 className={section ? 'filter-chip filter-chip-set' : 'filter-chip'}
                 aria-expanded={menu === 'section'}
                 onClick={() => setMenu(menu === 'section' ? null : 'section')}
               >
                 {section ? `Section ${section}` : 'Booth section'}
                 <Icon path={mdiChevronDown} size={14} color="currentColor" />
-              </button>
+              </LiquidButton>
               {menu === 'section' ? filterMenu('section') : null}
             </div>
           </div>
 
           <div className="sort-row">
-            <button
+            <LiquidButton
               className="sort-button"
               onClick={() => setSortBy(sortBy === 'name' ? 'booth' : 'name')}
             >
-              <Icon path={mdiSwapVertical} size={15} color={colors.textMutedDark} />
+              <Icon path={mdiSwapVertical} size={15} color="currentColor" />
               Sorted by {sortBy}
-            </button>
+            </LiquidButton>
           </div>
 
           <div className="screen-scroll" onClick={() => menu && setMenu(null)}>
@@ -192,7 +193,7 @@ export function ExhibitorsScreen() {
                 <div className="tier-title">{tier}</div>
                 <div className="tier-grid">
                   {list.map((e) => (
-                    <button
+                    <LiquidButton
                       key={e.id}
                       className="tier-card"
                       onClick={() =>
@@ -202,7 +203,7 @@ export function ExhibitorsScreen() {
                       <span className="exhibitor-logo">{initials(e.name)}</span>
                       <span className="tier-card-name">{e.name}</span>
                       <span className="exhibitor-meta">Booth {e.booth}</span>
-                    </button>
+                    </LiquidButton>
                   ))}
                 </div>
               </div>

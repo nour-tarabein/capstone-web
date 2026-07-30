@@ -7,6 +7,7 @@ import { openMap } from '../App';
 import { openOverlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+import { LiquidButton } from '../components/LiquidButton';
 
 export function MyEventScreen() {
   // Same persona the offsite map uses, so switching there follows here too.
@@ -21,7 +22,7 @@ export function MyEventScreen() {
       <ScreenHeader title="My Event" />
 
       <div className="screen-scroll myevent-content">
-        <button
+        <LiquidButton
           className="profile-card"
           onClick={() =>
             viewer && openOverlay({ kind: 'profile', attendeeId: viewer.id })
@@ -55,23 +56,23 @@ export function MyEventScreen() {
             <span className="profile-name">{viewer?.name ?? 'Attendee'}</span>
             <span className="profile-link">View profile</span>
           </span>
-        </button>
+        </LiquidButton>
 
         <div className="myevent-section-header">
           <span className="myevent-section-title">My updates</span>
           <span className="count-badge">{unreadUpdateCount}</span>
         </div>
 
-        <button className="update-card" onClick={() => openOverlay({ kind: 'updates' })}>
+        <LiquidButton className="update-card" onClick={() => openOverlay({ kind: 'updates' })}>
           <Icon path={mdiBellOutline} size={22} color={colors.green} />
           <span className="update-text">
             <strong>{latest.title} </strong>
             {latest.body.slice(0, 92)}…
           </span>
-        </button>
-        <button className="view-all" onClick={() => openOverlay({ kind: 'updates' })}>
+        </LiquidButton>
+        <LiquidButton className="view-all" onClick={() => openOverlay({ kind: 'updates' })}>
           View all
-        </button>
+        </LiquidButton>
 
         <div className="myevent-section-title myevent-afternoon">My afternoon</div>
 
@@ -85,10 +86,10 @@ export function MyEventScreen() {
             <div className="free-time-card">
               <div className="time-range">2:15 PM – 5:00 PM (2h 45m)</div>
               <div className="free-time-title">You have free time</div>
-              <button className="free-time-cta" onClick={openMap}>
+              <LiquidButton className="free-time-cta" onClick={openMap}>
                 <Icon path={mdiMapOutline} size={16} color={colors.green} />
                 Plan tonight on the map
-              </button>
+              </LiquidButton>
             </div>
           </div>
         </div>
@@ -100,7 +101,7 @@ export function MyEventScreen() {
             </div>
             <div className="timeline-body">
               <div className="happening-now happening-next">Up next · 5:00 PM</div>
-              <button
+              <LiquidButton
                 className="session-card timeline-session"
                 onClick={() =>
                   openOverlay({ kind: 'session', sessionId: upNext.id })
@@ -114,7 +115,7 @@ export function MyEventScreen() {
                 <span className="session-meta-row">
                   <span className="session-room">{upNext.room}</span>
                 </span>
-              </button>
+              </LiquidButton>
             </div>
           </div>
         ) : null}

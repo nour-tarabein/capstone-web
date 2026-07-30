@@ -17,6 +17,7 @@ import { MapScreen } from './screens/MapScreen';
 import { ReviewQueueScreen } from './screens/ReviewQueue';
 import { WelcomeScreen } from './screens/Welcome';
 import { OverlayHost } from './overlays';
+import { LiquidGlass } from './components/LiquidGlass';
 import { Toaster } from './ui/toast';
 import { getActiveConferenceId, subscribeToActiveConference } from './offsite/activeConference';
 import { tysonsConference } from './offsite/fixtures/conference';
@@ -125,11 +126,21 @@ export function App() {
       </div>
 
       <nav className="tab-bar">
+        {/* Refractive backdrop for the whole bar, then a single glass pill
+            that slides to the active tab — inactive tabs carry no chrome. */}
+        <LiquidGlass className="tab-bar-glass" />
+        <span
+          className="tab-pill"
+          style={{ transform: `translateX(${TABS.findIndex((t) => t.id === tab) * 100}%)` }}
+        >
+          <LiquidGlass className="tab-pill-glass" wobble={tab} />
+        </span>
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
             <button
               key={t.id}
+              data-liquid="off"
               className={active ? 'tab-button tab-button-active' : 'tab-button'}
               onClick={() => setTab(t.id)}
               aria-label={t.label}

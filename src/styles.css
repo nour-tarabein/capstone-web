@@ -1,23 +1,44 @@
 /* Mirrors the mobile app's theme (src/theme/colors.ts + spacing.ts) with a
-   motion-and-glass layer on top. Palette unchanged — liveliness comes from
-   light, depth, and movement, not new colors. */
+   restrained jade glass layer on top. Glass stays neutral; the background
+   scene supplies the green. */
 :root {
-  --bg: #0e1512;
-  --bg-elevated: #1a2220;
-  --card: #2a2f2c;
-  --surface-light: #ffffff;
-  --border: #3a403c;
-  --border-light: #e5e5e5;
-  --green: #00e676;
-  --green-muted: #1b3d2f;
-  --text: #ffffff;
-  --text-secondary: #a8b0ac;
-  --text-dark: #111111;
-  --text-muted-dark: #6b6b6b;
-  --separator: #e8e8e8;
-  --notification: #ff6b8a;
-  --glass: rgba(14, 21, 18, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.09);
+  --bg: #040b08;
+  --bg-secondary: #08150f;
+  --bg-elevated: rgba(255, 255, 255, 0.075);
+  --card: rgba(255, 255, 255, 0.09);
+  --surface-light: #f7f4ee;
+  --border: rgba(255, 255, 255, 0.13);
+  --border-light: #ddd9d1;
+  --green: #4fd1a0;
+  --green-dark: #35b884;
+  --green-muted: rgba(79, 209, 160, 0.14);
+  --text: rgba(244, 251, 247, 0.96);
+  --text-secondary: rgba(218, 236, 226, 0.66);
+  --text-dark: #07130f;
+  --text-muted-dark: #606a65;
+  --separator: #e3dfd7;
+  --notification: #e26d7c;
+  --glass: rgba(255, 255, 255, 0.075);
+  --glass-hover: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.13);
+  --glass-border-hover: rgba(255, 255, 255, 0.22);
+  --glass-blur: blur(20px) saturate(175%);
+  --glass-specular: 0 1px 0 rgba(255, 255, 255, 0.18) inset;
+  --glass-shadow: 0 14px 38px rgba(0, 0, 0, 0.3);
+  --liquid-control-fill: rgba(255, 255, 255, 0.075);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.115);
+  --liquid-control-edge: rgba(255, 255, 255, 0.18);
+  --liquid-control-edge-bright: rgba(255, 255, 255, 0.42);
+  --liquid-control-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    1px 0 0 rgba(255, 255, 255, 0.08) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.28) inset,
+    0 8px 22px rgba(0, 0, 0, 0.2);
+  --liquid-control-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 12px 28px rgba(0, 0, 0, 0.25);
   --font-display: 'Space Grotesk Variable', -apple-system, sans-serif;
   --ease-spring: cubic-bezier(0.32, 0.72, 0.24, 1.05);
 }
@@ -36,7 +57,7 @@ body,
 }
 
 body {
-  background: #060a08;
+  background: #030806;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
@@ -66,7 +87,7 @@ button:active {
   max-width: 480px;
   margin: 0 auto;
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(0, 230, 118, 0.09), transparent 60%),
+    radial-gradient(120% 60% at 50% -10%, rgba(79, 209, 160, 0.06), transparent 60%),
     var(--bg);
   display: flex;
   flex-direction: column;
@@ -81,7 +102,7 @@ button:active {
     box-shadow:
       0 0 0 1px #1f2924,
       0 24px 80px rgba(0, 0, 0, 0.6),
-      0 0 120px rgba(0, 230, 118, 0.07);
+      0 0 120px rgba(79, 209, 160, 0.07);
   }
 }
 
@@ -152,12 +173,34 @@ button:active {
   -webkit-overflow-scrolling: touch;
 }
 
+/* The tab bar floats over the tab pages, so their scroll content needs room
+   to clear it. Route-layer screens (map, review, welcome) have no tab bar
+   and are outside .screen-area, so they keep their own padding. */
+.screen-area .screen-scroll {
+  padding-bottom: calc(96px + max(env(safe-area-inset-bottom), 12px));
+}
+
 /* ---- header ---- */
 .screen-header {
+  position: relative;
   display: flex;
   align-items: center;
   min-height: 40px;
   padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+}
+
+/* Refractive layer behind the header content; the tint lives here so it
+   paints above the filtered backdrop. Content is raised so it stays sharp. */
+.screen-header-glass {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.header-side,
+.header-center {
+  position: relative;
+  z-index: 1;
 }
 
 .screen-light .screen-header {
@@ -197,6 +240,16 @@ button:active {
   color: var(--text);
 }
 
+.screen-light .exhibitor-logo {
+  background: rgba(79, 209, 160, 0.12);
+  border: 1px solid rgba(79, 209, 160, 0.24);
+  color: var(--green);
+}
+
+.screen-light .top-tab-underline-dark {
+  background: var(--green);
+}
+
 .screen-light .screen-header .icon-button {
   color: var(--text);
 }
@@ -209,7 +262,7 @@ button:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 14px rgba(0, 230, 118, 0.45);
+  box-shadow: 0 0 14px rgba(79, 209, 160, 0.45);
 }
 
 .brand-block {
@@ -228,7 +281,7 @@ button:active {
   letter-spacing: -0.5px;
   font-style: italic;
   line-height: 1.1;
-  text-shadow: 0 0 22px rgba(0, 230, 118, 0.4);
+  text-shadow: 0 0 22px rgba(79, 209, 160, 0.4);
 }
 
 .brand-event-title {
@@ -299,10 +352,10 @@ button:active {
 @keyframes pulse-dot {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.55);
+    box-shadow: 0 0 0 0 rgba(79, 209, 160, 0.55);
   }
   55% {
-    box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
+    box-shadow: 0 0 0 6px rgba(79, 209, 160, 0);
   }
 }
 
@@ -368,13 +421,13 @@ button:active {
   align-items: center;
   gap: 12px;
   width: 100%;
-  background: linear-gradient(135deg, rgba(0, 230, 118, 0.12), rgba(27, 61, 47, 0.4)),
+  background: linear-gradient(135deg, rgba(79, 209, 160, 0.12), rgba(27, 61, 47, 0.4)),
     var(--bg-elevated);
   border: 1px solid var(--green);
   border-radius: 14px;
   padding: 16px;
   margin: 20px 0;
-  box-shadow: 0 0 24px rgba(0, 230, 118, 0.12);
+  box-shadow: 0 0 24px rgba(79, 209, 160, 0.12);
 }
 
 .offsite-icon {
@@ -416,7 +469,7 @@ button:active {
 
 .home-tile {
   aspect-ratio: 1;
-  background: linear-gradient(160deg, #00f57e, #00ce6a);
+  background: linear-gradient(160deg, #5addaa, #35b884);
   border-radius: 14px;
   display: flex;
   flex-direction: column;
@@ -424,7 +477,7 @@ button:active {
   justify-content: center;
   gap: 8px;
   animation: tile-in 0.4s var(--ease-spring) backwards;
-  box-shadow: 0 6px 16px rgba(0, 230, 118, 0.18);
+  box-shadow: 0 6px 16px rgba(79, 209, 160, 0.18);
 }
 
 @keyframes tile-in {
@@ -515,7 +568,7 @@ button:active {
   height: 3px;
   border-radius: 2px;
   background: var(--green);
-  box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+  box-shadow: 0 0 10px rgba(79, 209, 160, 0.6);
   animation: underline-in 0.25s var(--ease-spring);
 }
 
@@ -566,7 +619,7 @@ button:active {
 .promo-card {
   border: 1px solid var(--green);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(0, 230, 118, 0.08), transparent 55%),
+  background: linear-gradient(135deg, rgba(79, 209, 160, 0.08), transparent 55%),
     var(--bg-elevated);
   padding: 16px;
 }
@@ -642,7 +695,7 @@ button:active {
   background: var(--green);
   border-color: var(--green);
   color: var(--text-dark);
-  box-shadow: 0 4px 14px rgba(0, 230, 118, 0.3);
+  box-shadow: 0 4px 14px rgba(79, 209, 160, 0.3);
 }
 
 .category-row {
@@ -1070,7 +1123,7 @@ button:active {
 
 .toggle-on {
   background: var(--green);
-  box-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
+  box-shadow: 0 0 12px rgba(79, 209, 160, 0.4);
 }
 
 .toggle-thumb {
@@ -1209,7 +1262,7 @@ button:active {
   font-size: 24px;
   font-weight: 700;
   background: linear-gradient(150deg, var(--green-muted), #173a44);
-  border: 1px solid rgba(0, 230, 118, 0.35);
+  border: 1px solid rgba(79, 209, 160, 0.35);
 }
 
 .qr-badge {
@@ -1343,7 +1396,7 @@ button:active {
   width: 2px;
   flex: 1;
   min-height: 90px;
-  background: linear-gradient(var(--green), rgba(0, 230, 118, 0.15));
+  background: linear-gradient(var(--green), rgba(79, 209, 160, 0.15));
   margin-top: 4px;
 }
 
@@ -1396,22 +1449,72 @@ button:active {
   animation: none;
 }
 
-/* ---- tab bar ---- */
+/* ---- tab bar ----
+   Floats over the scrolling content so the LiquidGlass layers have a real
+   backdrop to refract. The bar itself stays transparent; the tint lives on
+   .tab-bar-glass so it paints above the filtered backdrop, not under it. */
 .tab-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: max(env(safe-area-inset-bottom), 12px);
+  z-index: 40;
   display: flex;
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--glass-border);
-  padding: 8px 0 max(env(safe-area-inset-bottom), 10px);
+  padding: 6px;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 18px 44px rgba(0, 0, 0, 0.42);
+}
+
+.tab-bar-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(7, 19, 15, 0.3);
+}
+
+.liquid-glass-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.tab-pill {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / 5);
+  pointer-events: none;
+  transition: transform 0.4s var(--ease-spring);
+}
+
+.tab-pill-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  background: rgba(79, 209, 160, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.24) inset,
+    0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
 .tab-button {
   flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
+  padding: 8px 0 7px;
   color: #5f6a65;
   transition: color 0.2s ease;
 }
@@ -1614,7 +1717,7 @@ button:active {
   background: var(--green);
   border-color: var(--green);
   color: var(--text-dark);
-  box-shadow: 0 4px 18px rgba(0, 230, 118, 0.4);
+  box-shadow: 0 4px 18px rgba(79, 209, 160, 0.4);
 }
 
 .nights-row {
@@ -1745,7 +1848,7 @@ button:active {
 .persona-active {
   border-color: var(--green);
   color: var(--text);
-  box-shadow: 0 0 14px rgba(0, 230, 118, 0.35);
+  box-shadow: 0 0 14px rgba(79, 209, 160, 0.35);
 }
 
 .persona-active .persona-avatar {
@@ -1789,7 +1892,7 @@ button:active {
 .persona-settings-list .persona-active {
   border-color: var(--green);
   box-shadow: none;
-  background: rgba(0, 230, 118, 0.12);
+  background: rgba(79, 209, 160, 0.12);
 }
 
 .persona-settings-list .persona-active .persona-avatar {
@@ -1824,7 +1927,7 @@ button:active {
   font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 4px 18px rgba(0, 230, 118, 0.45);
+  box-shadow: 0 4px 18px rgba(79, 209, 160, 0.45);
 }
 
 .event-strip {
@@ -2018,7 +2121,7 @@ button:active {
   width: 22px;
   height: 22px;
   border-radius: 11px;
-  background: rgba(0, 230, 118, 0.25);
+  background: rgba(79, 209, 160, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2028,7 +2131,7 @@ button:active {
   position: absolute;
   inset: -8px;
   border-radius: 999px;
-  border: 2px solid rgba(0, 230, 118, 0.5);
+  border: 2px solid rgba(79, 209, 160, 0.5);
   animation: halo 2s ease-out infinite;
 }
 
@@ -2038,7 +2141,7 @@ button:active {
   border-radius: 5px;
   background: var(--green);
   border: 2px solid #ffffff;
-  box-shadow: 0 0 10px rgba(0, 230, 118, 0.8);
+  box-shadow: 0 0 10px rgba(79, 209, 160, 0.8);
 }
 
 /* ---- bottom sheets ---- */
@@ -2058,6 +2161,7 @@ button:active {
 }
 
 .sheet {
+  position: relative;
   width: 100%;
   max-width: 480px;
   max-height: 88%;
@@ -2070,6 +2174,23 @@ button:active {
   transform: translateY(103%);
   transition: transform 0.3s var(--ease-spring);
   box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* Refractive layer behind the sheet content — the sheet's own tint moves
+   here so the backdrop is filtered first and tinted second. The handle and
+   scroll body are raised above it to stay sharp and interactive. */
+.sheet-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.sheet-handle,
+.sheet-scroll {
+  position: relative;
+  z-index: 1;
 }
 
 .sheet-open {
@@ -2173,7 +2294,7 @@ button:active {
   height: 130px;
   background: radial-gradient(
     60% 100% at 50% 0%,
-    color-mix(in srgb, var(--source-color, #00e676) 22%, transparent),
+    color-mix(in srgb, var(--source-color, #4fd1a0) 22%, transparent),
     transparent
   );
   pointer-events: none;
@@ -2231,7 +2352,7 @@ button:active {
   justify-content: center;
   gap: 7px;
   width: 100%;
-  background: linear-gradient(160deg, #00f57e, #00ce6a);
+  background: linear-gradient(160deg, #5addaa, #35b884);
   border-radius: 13px;
   padding: 13px 0;
   text-align: center;
@@ -2239,7 +2360,7 @@ button:active {
   font-size: 15px;
   font-weight: 700;
   margin-top: 16px;
-  box-shadow: 0 6px 22px rgba(0, 230, 118, 0.3);
+  box-shadow: 0 6px 22px rgba(79, 209, 160, 0.3);
 }
 
 .rsvp-button:disabled {
@@ -2461,7 +2582,7 @@ button:active {
   font-size: 18px;
   font-family: var(--font-display);
   background: linear-gradient(150deg, var(--green-muted), #173a44);
-  border: 1px solid rgba(0, 230, 118, 0.35);
+  border: 1px solid rgba(79, 209, 160, 0.35);
 }
 
 .person-body {
@@ -2534,7 +2655,7 @@ button:active {
 .field-input:focus {
   outline: none;
   border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.15);
+  box-shadow: 0 0 0 3px rgba(79, 209, 160, 0.15);
 }
 
 .field-textarea {
@@ -2730,10 +2851,10 @@ button:active {
 }
 
 .action-approve {
-  background: linear-gradient(160deg, #00f57e, #00ce6a);
+  background: linear-gradient(160deg, #5addaa, #35b884);
   color: var(--text-dark);
   font-weight: 700;
-  box-shadow: 0 4px 16px rgba(0, 230, 118, 0.3);
+  box-shadow: 0 4px 16px rgba(79, 209, 160, 0.3);
 }
 
 /* ---- source badge ---- */
@@ -2944,12 +3065,12 @@ button:active {
   width: 38px;
   height: 38px;
   border-radius: 19px;
-  background: linear-gradient(160deg, #00f57e, #00ce6a);
+  background: linear-gradient(160deg, #5addaa, #35b884);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 0 14px rgba(0, 230, 118, 0.4);
+  box-shadow: 0 0 14px rgba(79, 209, 160, 0.4);
 }
 
 .dm-thread {
@@ -2988,7 +3109,7 @@ button:active {
 .dm-bubble-me {
   align-self: flex-end;
   background: var(--green-muted);
-  border: 1px solid rgba(0, 230, 118, 0.3);
+  border: 1px solid rgba(79, 209, 160, 0.3);
   border-radius: 16px 16px 4px 16px;
 }
 
@@ -3083,7 +3204,7 @@ button:active {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(0, 230, 118, 0.35);
+  box-shadow: 0 4px 14px rgba(79, 209, 160, 0.35);
 }
 
 .dm-send:disabled {
@@ -3155,7 +3276,7 @@ button:active {
 }
 
 .challenge-done {
-  border-color: rgba(0, 230, 118, 0.4);
+  border-color: rgba(79, 209, 160, 0.4);
   opacity: 0.75;
 }
 
@@ -3296,4 +3417,938 @@ button:active {
   color: var(--text-muted-dark);
   font-size: 13px;
   margin-top: 3px;
+}
+
+/* ================= Refined jade glass system =================
+   Neutral glass sits over a deep pine scene. Green is reserved for actions,
+   live state, and navigation so it reads as a brand signal instead of light. */
+
+.shell {
+  isolation: isolate;
+  overflow: clip;
+  background:
+    radial-gradient(110% 58% at 18% -4%, rgba(39, 139, 99, 0.13), transparent 58%),
+    radial-gradient(78% 54% at 108% 82%, rgba(116, 128, 54, 0.06), transparent 64%),
+    linear-gradient(155deg, var(--bg-secondary) 0%, var(--bg) 46%, #020704 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 28px 80px rgba(0, 0, 0, 0.58);
+}
+
+.shell::before,
+.shell::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(64px);
+  opacity: 0.22;
+  will-change: transform;
+  animation: atmosphere-drift 14s ease-in-out infinite;
+}
+
+.shell::before {
+  width: 260px;
+  height: 260px;
+  top: -90px;
+  left: -100px;
+  background: #238b63;
+}
+
+.shell::after {
+  width: 220px;
+  height: 220px;
+  right: -100px;
+  bottom: 92px;
+  background: #8a8d3e;
+  opacity: 0.14;
+  animation-delay: -6s;
+}
+
+@keyframes atmosphere-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -12px, 0) scale(1.06);
+  }
+}
+
+.screen-area {
+  position: relative;
+  z-index: 1;
+}
+
+.screen-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.screen-header-glass {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.screen-light .screen-header {
+  background: transparent;
+}
+
+.screen-light .screen-header-glass {
+  background: rgba(7, 19, 15, 0.6);
+}
+
+.brand-logo {
+  color: var(--text);
+  font-size: 23px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+  text-shadow: none;
+}
+
+.brand-event-title {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.25px;
+}
+
+.icon-button,
+.ai-chat-button {
+  width: 34px;
+  height: 34px;
+  color: var(--text-secondary);
+}
+
+.ai-chat-button {
+  border-radius: 0;
+  background: transparent;
+  color: var(--green);
+  box-shadow: none;
+}
+
+.home-content {
+  padding: 14px 16px 36px;
+}
+
+.hero-wrap {
+  margin-top: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  box-shadow: var(--glass-specular), var(--glass-shadow);
+}
+
+.hero-image {
+  height: 172px;
+}
+
+.hero-shade {
+  background: linear-gradient(180deg, transparent 42%, rgba(4, 11, 8, 0.76));
+}
+
+.live-pill {
+  background: rgba(7, 19, 15, 0.58);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: var(--glass-specular);
+}
+
+.live-dot,
+.tab-dot,
+.timeline-dot-pulse {
+  animation: none;
+  box-shadow: none;
+}
+
+.live-dot {
+  background: var(--green);
+}
+
+.stat-row {
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.stat-chip,
+.offsite-card,
+.home-tile,
+.happening-card,
+.promo-card,
+.session-card,
+.profile-card,
+.update-card,
+.free-time-card,
+.feed-card,
+.challenge,
+.copy-row,
+.locked-row,
+.speaker-card,
+.mini-session {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-specular), 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.stat-chip {
+  border-radius: 13px;
+  padding: 9px 4px 8px;
+  color: var(--text-secondary);
+}
+
+.stat-chip strong {
+  margin-bottom: 1px;
+  font-size: 15px;
+}
+
+.home-welcome {
+  margin-top: 22px;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.home-body {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.home-link {
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.offsite-card {
+  position: relative;
+  gap: 13px;
+  border-radius: 18px;
+  padding: 17px 16px;
+  margin: 20px 0 16px;
+  color: var(--green);
+  overflow: hidden;
+}
+
+.offsite-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 46%);
+}
+
+.offsite-card:hover {
+  background: var(--glass-hover);
+  border-color: var(--glass-border-hover);
+}
+
+.offsite-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--green);
+}
+
+.offsite-title {
+  color: var(--text);
+}
+
+.offsite-chevron {
+  color: var(--text-secondary);
+}
+
+.home-grid {
+  gap: 10px;
+}
+
+.home-tile {
+  min-height: 96px;
+  aspect-ratio: auto;
+  border-radius: 17px;
+  color: var(--green);
+  box-shadow: var(--glass-specular), 0 8px 22px rgba(0, 0, 0, 0.16);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.18s var(--ease-spring);
+}
+
+.home-tile:hover {
+  background: var(--glass-hover);
+  border-color: var(--glass-border-hover);
+  transform: translateY(-2px);
+}
+
+.home-tile-label {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.happening-card {
+  border-radius: 18px;
+  padding: 15px 16px;
+}
+
+.happening-kicker {
+  color: var(--green);
+}
+
+.tab-button {
+  color: rgba(218, 236, 226, 0.38);
+}
+
+.tab-button-active {
+  color: var(--green);
+}
+
+.tab-button-active .tab-icon-wrap {
+  animation: none;
+}
+
+.top-tab-underline,
+.day-chip-active,
+.chip-active,
+.toggle-on,
+.quick-add-on,
+.official-badge,
+.pending-badge,
+.count-badge,
+.challenge-check-done,
+.persona-active .persona-avatar {
+  box-shadow: none;
+}
+
+.glass-button,
+.glass-panel,
+.chip,
+.nights-row,
+.persona {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-specular), 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.persona-active {
+  border-color: rgba(79, 209, 160, 0.62);
+  box-shadow: var(--glass-specular);
+}
+
+.host-button,
+.rsvp-button,
+.dm-send,
+.concierge-avatar,
+.action-approve {
+  background: var(--green);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.event-card {
+  background: var(--glass);
+  border-color: var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-specular), 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.event-card-selected {
+  background: var(--glass-hover);
+  box-shadow:
+    var(--glass-specular),
+    0 0 0 1px color-mix(in srgb, var(--source-color, var(--green)) 34%, transparent),
+    0 16px 34px rgba(0, 0, 0, 0.34);
+}
+
+.sheet {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 -20px 60px rgba(0, 0, 0, 0.44);
+}
+
+.field-input,
+.search-box,
+.dm-input {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-specular);
+}
+
+.field-input:focus,
+.search-box:focus-within,
+.dm-input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.055), var(--glass-specular);
+}
+
+.dm-bubble {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--glass-border);
+}
+
+.dm-bubble-me {
+  background: var(--green-muted);
+  border-color: rgba(79, 209, 160, 0.28);
+}
+
+.avatar-initials,
+.person-avatar-xl {
+  background: linear-gradient(145deg, rgba(79, 209, 160, 0.22), rgba(255, 255, 255, 0.07));
+  border-color: rgba(79, 209, 160, 0.3);
+}
+
+.timeline-line {
+  background: linear-gradient(var(--green), rgba(79, 209, 160, 0.14));
+}
+
+.going-dot,
+.map-pin-halo,
+.venue-pin-ring {
+  animation: none;
+}
+
+.map-pin {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.58);
+}
+
+.map-pin-selected {
+  border-color: rgba(255, 255, 255, 0.88);
+}
+
+.map-pin-halo {
+  opacity: 0.16;
+}
+
+.venue-pin {
+  background: rgba(79, 209, 160, 0.18);
+}
+
+.venue-pin-ring {
+  border-color: rgba(79, 209, 160, 0.42);
+  opacity: 0.65;
+}
+
+.venue-pin-dot {
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
+}
+
+.gate-lock {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .stat-chip,
+  .offsite-card,
+  .home-tile,
+  .happening-card,
+  .glass-button,
+  .glass-panel,
+  .chip,
+  .nights-row,
+  .persona,
+  .event-card,
+  .sheet {
+    background: rgba(12, 30, 23, 0.96);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .stat-chip,
+  .offsite-card,
+  .home-tile,
+  .happening-card,
+  .glass-button,
+  .glass-panel,
+  .chip,
+  .nights-row,
+  .persona,
+  .event-card,
+  .sheet {
+    background: rgba(12, 30, 23, 0.96);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ================= Optical liquid-glass controls =================
+   Inspired by liquid-glass-react's layered edge treatment. This stays on the
+   semantic button itself: one refractive background, a dual inset rim, and a
+   top-light interaction layer instead of an SVG filter per control. */
+
+button:not([data-liquid='off']) {
+  position: relative;
+  isolation: isolate;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--liquid-control-edge);
+  background-color: var(--liquid-control-fill);
+  background-image:
+    radial-gradient(
+      115% 95% at 12% -28%,
+      rgba(255, 255, 255, 0.25) 0%,
+      rgba(255, 255, 255, 0.07) 34%,
+      transparent 62%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 44%,
+      rgba(255, 255, 255, 0.035) 72%,
+      rgba(0, 0, 0, 0.08) 100%
+    );
+  box-shadow: var(--liquid-control-shadow);
+  transition:
+    transform 0.18s var(--ease-spring),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease,
+    opacity 0.16s ease;
+}
+
+button:not([data-liquid='off'])::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      80% 70% at 50% -18%,
+      rgba(255, 255, 255, 0.72),
+      rgba(255, 255, 255, 0.12) 42%,
+      transparent 72%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.16;
+  transition: opacity 0.18s ease;
+}
+
+button:not([data-liquid='off']):disabled {
+  filter: saturate(0.55);
+  opacity: 0.46;
+}
+
+button:not([data-liquid='off']):active {
+  transform: translateY(1px) scale(0.965);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 4px 12px rgba(0, 0, 0, 0.18);
+  transition-duration: 0.08s;
+}
+
+button:not([data-liquid='off']):active::after {
+  opacity: 0.62;
+}
+
+@media (hover: hover) {
+  button:not([data-liquid='off']):not(:disabled):hover {
+    border-color: var(--liquid-control-edge-bright);
+    background-color: var(--liquid-control-fill-hover);
+    box-shadow: var(--liquid-control-shadow-hover);
+  }
+
+  button:not([data-liquid='off']):not(:disabled):hover::after {
+    opacity: 0.44;
+  }
+
+  button:is(
+      .rsvp-button,
+      .host-button,
+      .glass-button,
+      .chip,
+      .cloud-chip,
+      .day-chip,
+      .category-chip,
+      .filter-chip,
+      .dm-button,
+      .action-approve,
+      .action-reject,
+      .home-link,
+      .icon-button,
+      .ai-chat-button
+    ):not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Primary actions keep the jade substrate, with neutral glass above it. */
+button:is(
+    .rsvp-button,
+    .host-button,
+    .action-approve,
+    .dm-send,
+    .filter-chip-set,
+    .day-chip-active,
+    .chip-active,
+    .quick-add-on,
+    .challenge-check-done
+  ) {
+  --liquid-control-fill: rgba(79, 209, 160, 0.78);
+  --liquid-control-fill-hover: rgba(79, 209, 160, 0.88);
+  --liquid-control-edge: rgba(205, 255, 234, 0.48);
+  --liquid-control-edge-bright: rgba(225, 255, 243, 0.72);
+  --liquid-control-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.48) inset,
+    1px 0 0 rgba(255, 255, 255, 0.16) inset,
+    0 -1px 0 rgba(2, 45, 30, 0.36) inset,
+    0 9px 24px rgba(0, 0, 0, 0.24);
+  --liquid-control-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.62) inset,
+    1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1px 0 rgba(2, 45, 30, 0.4) inset,
+    0 13px 30px rgba(0, 0, 0, 0.28);
+  background-color: var(--green);
+}
+
+button.rsvp-going {
+  --liquid-control-fill: rgba(255, 255, 255, 0.065);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.11);
+  --liquid-control-edge: rgba(79, 209, 160, 0.46);
+  background-color: var(--liquid-control-fill);
+}
+
+/* ---- per-control refraction layer ----
+   A LiquidGlass child at z-index -1 slots between the control's own
+   background and its content: text and icons stay sharp above it, while the
+   backdrop (and the control's fill) refracts through the lens. Hosts need
+   position + isolation so the negative z-index stays inside the control. */
+.control-glass {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--liquid-control-fill);
+  background-image:
+    radial-gradient(
+      115% 95% at 12% -28%,
+      rgba(255, 255, 255, 0.25) 0%,
+      rgba(255, 255, 255, 0.07) 34%,
+      transparent 62%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 44%,
+      rgba(255, 255, 255, 0.035) 72%,
+      rgba(0, 0, 0, 0.08) 100%
+    );
+  transition: background-color 0.2s ease;
+}
+
+.stat-chip {
+  position: relative;
+  isolation: isolate;
+}
+
+/* These cards previously blurred their backdrop themselves; the refraction
+   layer replaces that, and doubling up would filter the lens output twice. */
+.stat-chip,
+.offsite-card,
+.home-tile,
+.happening-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* The home cards read as sheets of curved glass rather than smoked panels:
+   a much thinner fill, a brighter rim, and a top-left specular sweep instead
+   of the default button gradient's dark corner. (button:is keeps specificity
+   level with the global button chrome so this later rule wins.) */
+button:is(.offsite-card, .home-tile, .happening-card),
+.stat-chip {
+  --liquid-control-fill: rgba(255, 255, 255, 0.09);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.14);
+  --liquid-control-edge: rgba(255, 255, 255, 0.24);
+  --liquid-control-edge-bright: rgba(255, 255, 255, 0.42);
+  background-color: var(--liquid-control-fill);
+  background-image:
+    radial-gradient(
+      130% 100% at 12% -25%,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(255, 255, 255, 0.05) 38%,
+      transparent 64%
+    ),
+    linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.09) 0%,
+      transparent 40%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
+  border-color: var(--liquid-control-edge);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    1px 0 0 rgba(255, 255, 255, 0.09) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.24) inset,
+    0 14px 34px rgba(0, 0, 0, 0.3);
+}
+
+/* Floats over the map, so let the tiles refract through translucent jade
+   instead of hiding them behind a solid fill. */
+button.host-button {
+  --liquid-control-fill: rgba(79, 209, 160, 0.3);
+  --liquid-control-fill-hover: rgba(79, 209, 160, 0.44);
+  background-color: var(--liquid-control-fill);
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Compact controls read as individual pieces of curved glass. */
+button:is(
+    .icon-button,
+    .ai-chat-button,
+    .back-button,
+    .quick-add,
+    .qr-badge,
+    .dm-send,
+    .challenge-check
+  ) {
+  border-radius: 999px;
+}
+
+.icon-button,
+.ai-chat-button {
+  --liquid-control-fill: rgba(255, 255, 255, 0.055);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.11);
+}
+
+button:is(
+    .home-link,
+    .promo-cta,
+    .view-all,
+    .free-time-cta,
+    .bubble-cta,
+    .handoff-link
+  ) {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 13px;
+  text-decoration: none;
+}
+
+button:is(
+    .more-row,
+    .more-section-header,
+    .offsite-row,
+    .exhibitor-row,
+    .popover-item,
+    .tier-card,
+    .filter-chip,
+    .sort-button,
+    .top-tab-light,
+    .exit-button
+  ) {
+  --liquid-control-fill: rgba(255, 255, 255, 0.09);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.14);
+  --liquid-control-edge: rgba(255, 255, 255, 0.24);
+  --liquid-control-edge-bright: rgba(255, 255, 255, 0.42);
+  --liquid-control-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    1px 0 0 rgba(255, 255, 255, 0.09) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.24) inset,
+    0 10px 26px rgba(0, 0, 0, 0.22);
+  --liquid-control-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.42) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.28) inset,
+    0 14px 30px rgba(0, 0, 0, 0.26);
+}
+
+.screen-light {
+  --surface-light: rgba(255, 255, 255, 0.075);
+  --border-light: rgba(255, 255, 255, 0.14);
+  --text-dark: rgba(244, 251, 247, 0.96);
+  --text-muted-dark: rgba(218, 236, 226, 0.62);
+  --separator: rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(95% 58% at 0% 0%, rgba(79, 209, 160, 0.1), transparent 62%),
+    radial-gradient(80% 50% at 105% 100%, rgba(157, 148, 73, 0.06), transparent 66%),
+    var(--bg);
+  color: var(--text);
+}
+
+.more-row,
+.more-section-header,
+.offsite-row {
+  width: calc(100% - 20px);
+  margin: 5px 10px;
+  border-radius: 17px;
+}
+
+.more-row {
+  padding: 14px 15px;
+}
+
+.more-section-header {
+  padding: 15px 14px 9px;
+}
+
+.more-separator,
+.exhibitor-separator {
+  display: none;
+}
+
+.section-divider {
+  margin: 10px 14px 4px;
+  background: rgba(27, 45, 36, 0.1);
+}
+
+.exhibitor-row {
+  width: calc(100% - 20px);
+  margin: 5px 10px;
+  border-radius: 17px;
+}
+
+.exit-button {
+  width: calc(100% - 20px);
+  margin: 8px 10px 18px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  button:not([data-liquid='off']) {
+    background-color: rgba(20, 39, 31, 0.96);
+    background-image: none;
+  }
+
+  .screen-light button:not([data-liquid='off']) {
+    background-color: rgba(247, 244, 238, 0.98);
+  }
+}
+
+/* Real refractive controls keep their host transparent. The tint lives on
+   the LiquidGlass child, so Chromium bends the map/photo/list beneath the
+   control before the translucent color is painted above it. */
+button.liquid-control,
+button.liquid-control:hover,
+button.liquid-control:active,
+.liquid-control-surface {
+  background-color: transparent;
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+button.liquid-control:hover > .control-glass {
+  background-color: var(--liquid-control-fill-hover);
+}
+
+/* The map's bottom vignette used to turn every card's sampled backdrop nearly
+   black. Keep enough contrast at the edge while leaving map detail available
+   for the lenses to refract as the event strip scrolls. */
+.map-screen::after {
+  background: linear-gradient(transparent, rgba(4, 10, 7, 0.62));
+}
+
+.map-screen .night-chip-active {
+  --liquid-control-fill: rgba(79, 209, 160, 0.2);
+  --liquid-control-fill-hover: rgba(79, 209, 160, 0.28);
+}
+
+.map-screen .glass-button {
+  --liquid-control-fill: rgba(255, 255, 255, 0.12);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.18);
+}
+
+.map-screen .chip-active {
+  --liquid-control-fill: rgba(79, 209, 160, 0.78);
+  --liquid-control-fill-hover: rgba(79, 209, 160, 0.88);
+}
+
+/* Event cards are deliberately milkier than the small chrome: the brighter
+   neutral substrate catches edge light without hiding the moving map. Source
+   color stays a shallow highlight instead of becoming a dark gradient. */
+.map-screen .event-card {
+  --liquid-control-fill: rgba(255, 255, 255, 0.13);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.18);
+  border-color: color-mix(
+    in srgb,
+    var(--source-color, var(--green)) 24%,
+    rgba(255, 255, 255, 0.34)
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.42) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.26) inset,
+    0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.event-card-glass {
+  background-image:
+    radial-gradient(
+      125% 100% at 10% -24%,
+      rgba(255, 255, 255, 0.36) 0%,
+      rgba(255, 255, 255, 0.09) 36%,
+      transparent 62%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--source-color, var(--green)) 18%, transparent),
+      transparent 58%
+    );
+}
+
+.map-screen .event-card-selected {
+  --liquid-control-fill: rgba(255, 255, 255, 0.2);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.23);
+  border-color: color-mix(
+    in srgb,
+    var(--source-color, var(--green)) 58%,
+    white
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.54) inset,
+    0 0 0 1px color-mix(in srgb, var(--source-color, var(--green)) 34%, transparent),
+    0 14px 34px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  button.liquid-control > .control-glass,
+  .liquid-control-surface > .control-glass {
+    background-color: rgba(20, 39, 31, 0.96);
+    background-image: none;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }

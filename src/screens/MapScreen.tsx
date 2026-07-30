@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { mdiChevronLeft, mdiPlus, mdiWeatherNight } from '@mdi/js';
 import { goBack } from '../App';
 import { EventSheet } from '../components/EventSheet';
+import { LiquidGlass } from '../components/LiquidGlass';
 import { HostSheet } from '../components/HostSheet';
 import { SourceBadge } from '../components/SourceBadge';
 import type { Conference, OffsiteEvent } from '../offsite/domain/types';
@@ -204,7 +205,12 @@ export function MapScreen() {
       <div ref={containerRef} className="map-container" />
 
       <header className="map-header">
-        <button className="back-button glass-button" onClick={goBack} aria-label="Close map">
+        <button
+          className="back-button glass-button liquid-control"
+          onClick={goBack}
+          aria-label="Close map"
+        >
+          <LiquidGlass className="control-glass" />
           <Icon path={mdiChevronLeft} size={22} color={colors.text} />
         </button>
         <div className="map-header-text glass-panel">
@@ -221,9 +227,10 @@ export function MapScreen() {
       <div className="map-overlay-top">
         <div className="chip-row">
           <button
-            className={showTonight ? 'chip chip-active' : 'chip'}
+            className={showTonight ? 'chip chip-active liquid-control' : 'chip liquid-control'}
             onClick={() => setShowTonight((v) => !v)}
           >
+            <LiquidGlass className="control-glass" />
             <Icon
               path={mdiWeatherNight}
               size={14}
@@ -238,9 +245,14 @@ export function MapScreen() {
             {conference.nights.map((n) => (
               <button
                 key={n}
-                className={n === night ? 'night-chip night-chip-active' : 'night-chip'}
+                className={
+                  n === night
+                    ? 'night-chip night-chip-active liquid-control'
+                    : 'night-chip liquid-control'
+                }
                 onClick={() => setNight(n)}
               >
+                <LiquidGlass className="control-glass" />
                 {nightLabels[n] ?? n}
               </button>
             ))}
@@ -257,11 +269,12 @@ export function MapScreen() {
               </span>
             </div>
             <button
-              className="host-button"
+              className="host-button liquid-control"
               onClick={() => setHosting(true)}
               aria-label="Host your own event"
             >
-              <Icon path={mdiPlus} size={15} color={colors.textDark} />
+              <LiquidGlass className="control-glass" />
+              <Icon path={mdiPlus} size={15} color="currentColor" />
               Host
             </button>
           </div>
@@ -280,13 +293,18 @@ export function MapScreen() {
                 <button
                   key={event.id}
                   data-event-id={event.id}
-                  className={selected ? 'event-card event-card-selected' : 'event-card'}
+                  className={
+                    selected
+                      ? 'event-card event-card-selected liquid-control'
+                      : 'event-card liquid-control'
+                  }
                   style={{
                     animationDelay: `${Math.min(i, 5) * 60}ms`,
                     ['--source-color' as string]: sourceColors[event.source],
                   }}
                   onClick={() => select(event.id, true, true)}
                 >
+                  <LiquidGlass className="control-glass event-card-glass" />
                   <span className="event-card-body">
                     <span className="event-head">
                       <SourceBadge source={event.source} />

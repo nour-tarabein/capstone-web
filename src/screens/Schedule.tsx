@@ -21,6 +21,7 @@ import { openOverlay } from '../overlays';
 import { toast } from '../ui/toast';
 import { Icon } from '../icons';
 import { colors } from '../theme';
+import { LiquidButton } from '../components/LiquidButton';
 
 export function ScheduleScreen() {
   const [activeTab, setActiveTab] = useState<(typeof scheduleTabs)[number]>(
@@ -82,33 +83,33 @@ export function ScheduleScreen() {
           <div className="promo-card">
             <div className="promo-top">
               <Icon path={mdiStarFourPoints} size={18} color={colors.green} />
-              <button
+              <LiquidButton
                 className="icon-button"
                 onClick={() => setPromoOpen(false)}
                 aria-label="Collapse"
               >
                 <Icon path={mdiChevronUp} size={20} color={colors.text} />
-              </button>
+              </LiquidButton>
             </div>
             <div className="promo-title">Get the most out of your schedule</div>
             <div className="promo-body">
               Use AI to find sessions you might like based on your profile,
               interests, and activity.
             </div>
-            <button className="promo-cta" onClick={() => setActiveTab('Recommended')}>
+            <LiquidButton className="promo-cta" onClick={() => setActiveTab('Recommended')}>
               Get recommendations
-            </button>
+            </LiquidButton>
           </div>
         ) : (
-          <button className="promo-collapsed" onClick={() => setPromoOpen(true)}>
+          <LiquidButton className="promo-collapsed" onClick={() => setPromoOpen(true)}>
             <span className="promo-cta-inline">Get recommendations</span>
             <Icon path={mdiChevronDown} size={18} color={colors.green} />
-          </button>
+          </LiquidButton>
         )}
 
         <div className="day-row">
           {scheduleDays.map((day) => (
-            <button
+            <LiquidButton
               key={day.night}
               className={
                 day.night === activeDay ? 'day-chip day-chip-active' : 'day-chip'
@@ -116,13 +117,13 @@ export function ScheduleScreen() {
               onClick={() => setActiveDay(day.night)}
             >
               {day.label}
-            </button>
+            </LiquidButton>
           ))}
         </div>
 
         <div className="category-row">
           {scheduleCategories.map((category) => (
-            <button
+            <LiquidButton
               key={category}
               className={
                 category === activeCategory
@@ -132,7 +133,7 @@ export function ScheduleScreen() {
               onClick={() => setActiveCategory(category)}
             >
               {category}
-            </button>
+            </LiquidButton>
           ))}
         </div>
 
@@ -147,7 +148,7 @@ export function ScheduleScreen() {
             const speaker = speakersBySession.get(session.id);
             const onSchedule = isOnSchedule(viewerId, session.id);
             return (
-              <button
+              <LiquidButton
                 key={session.id}
                 className="session-card"
                 style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
@@ -194,7 +195,7 @@ export function ScheduleScreen() {
                     {speaker ? ` · ${speaker.name}` : ''}
                   </span>
                 </span>
-              </button>
+              </LiquidButton>
             );
           })
         )}
