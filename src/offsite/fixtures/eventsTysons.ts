@@ -2,7 +2,6 @@ import type { OffsiteEvent } from '../domain/types'
 import type { RawEvent } from '../ingestion/SourceAdapter'
 import { tysonsConference } from './conference'
 import { handCollectedTysonsEvents } from './handCollectedTysons'
-import { tysonsHappyHours } from './happyHoursTysons'
 import { milesBetween } from '../ingestion/curate'
 
 /**
@@ -64,37 +63,6 @@ const eventbriteEvents: RawEvent[] = [
     lng: -77.2109,
     tags: [],
   },
-  {
-    source: 'eventbrite',
-    sourceEventId: 'tys-eb-real-estate-investing',
-    externalGoingCount: 45,
-    sourceUrl:
-      'https://www.eventbrite.com/e/foundations-and-secrets-of-real-estate-investing-tickets-1994399648035',
-    title: 'Foundations and Secrets of Real Estate Investing',
-    description:
-      'In-person session on real estate investing fundamentals. Free to attend, free parking behind the building.',
-    startsAt: '2026-07-30T16:00:00-04:00',
-    endsAt: '2026-07-30T18:00:00-04:00',
-    venueName: '1900 Gallows Rd, Suite 230',
-    lat: 38.914,
-    lng: -77.2286,
-    tags: ['FinTech'],
-  },
-  {
-    source: 'eventbrite',
-    sourceEventId: 'tys-eb-greenhouse-happy-hour',
-    externalGoingCount: 60,
-    sourceUrl: 'https://www.eventbrite.com/e/free-all-you-can-eat-happy-hour-tickets-1992375720413',
-    title: 'Free All-You-Can-Eat Happy Hour',
-    description:
-      'Buy any drink and the chef-selected bites are unlimited. Rotating appetizers in a greenhouse-themed room.',
-    startsAt: '2026-07-30T16:00:00-04:00',
-    endsAt: '2026-07-30T19:00:00-04:00',
-    venueName: 'Greenhouse Bistro',
-    lat: 38.9174,
-    lng: -77.2373,
-    tags: [],
-  },
 ]
 
 function approve(raw: RawEvent): OffsiteEvent {
@@ -134,13 +102,6 @@ const hostedEvents: OffsiteEvent[] = [
     curationRationale: 'Hosted by an attendee · approved by the organizer',
     submittedByAttendeeId: 't9', // Marc Benioff, CEO, Salesforce
   },
-  // Real Tysons / McLean bars, proposed by attendees and already through the
-  // organizer gate so they land on the map rather than in the review queue.
-  ...tysonsHappyHours.map(({ raw, hostId }) => ({
-    ...approve(raw),
-    curationRationale: 'Hosted by an attendee · approved by the organizer',
-    submittedByAttendeeId: hostId,
-  })),
 ]
 
 export const tysonsEvents: OffsiteEvent[] = [
