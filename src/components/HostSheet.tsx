@@ -4,6 +4,8 @@ import type { Attendee, Conference } from '../offsite/domain/types';
 import { getRepository } from '../offsite/data';
 import { conferenceIso } from '../offsite/format';
 import { nightLabels } from '../offsite/fixtures/conference';
+import { openReview } from '../App';
+import { Sheet } from '../ui/Sheet';
 import { venuesForConference } from '../offsite/fixtures/venues';
 import { Sheet, useDismiss } from '../ui/Sheet';
 import { Burst } from '../ui/Burst';
@@ -84,11 +86,10 @@ function HostForm({
         <div className="sheet-title">Sent for review</div>
         <p className="sheet-description">
           Your event went to the organizer&apos;s review queue. It appears on
-          the map as soon as they approve it — flip on Organizer mode in
-          More to play that side yourself.
+          the map as soon as they approve it.
         </p>
-        <button className="rsvp-button" onClick={dismiss}>
-          Done
+        <button className="rsvp-button" onClick={openReview}>
+          Open review queue
         </button>
       </div>
     );

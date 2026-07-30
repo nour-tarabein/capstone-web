@@ -12,8 +12,8 @@ import type {
 import { groupCoAttendees } from '../domain/relevance'
 import type { Repository } from './repository'
 import { getViewerId } from '../persona'
+import { resolveViewer } from '../viewerResolution'
 import { sessionTitles } from '../fixtures/sessions'
-import { attendeesById } from '../fixtures/attendees'
 import { conference as fixtureConference, conferencesById } from '../fixtures/conference'
 import { supabaseAnonKey, supabaseUrl } from './env'
 
@@ -48,20 +48,7 @@ export function createSupabaseRepository(): Repository {
     },
 
     async getViewer(conferenceId: string): Promise<Attendee> {
-      const id = getViewerId()
-      const { data, error } = await client
-        .from('attendees')
-        .select('*')
-        .eq('id', id)
-        .eq('conference_id', conferenceId)
-        .maybeSingle()
-      if (data && !error) return toAttendee(data)
-      // Roster can lag fixtures after a local rewrite — prefer the fixture so
-      // the UI never shows a retired fictional name (Maya / Priya). Only
-      // applies to the conference the local fixtures actually describe.
-      const local = conferenceId === fixtureConference.id ? attendeesById.get(id) : undefined
-      if (local) return local
-      throw error ?? new Error(`Viewer ${id} not found in conference ${conferenceId}`)
+      return resolveViewer(conferenceId, getViewerId())
     },
 
     // SECURITY DEFINER, same reasoning as event_submit: anon has no INSERT on
@@ -319,6 +306,9 @@ function toConference(row: any, conferenceId: string): Conference {
     name: row.name,
     city: row.city,
     venueName: row.venue_name,
+    // Viewer defaults are app behavior, not remotely editable conference data.
+    defaultViewerId:
+      conferencesById.get(conferenceId)?.defaultViewerId ?? fixtureConference.defaultViewerId,
     venueLat: row.venue_lat,
     venueLng: row.venue_lng,
     // Demo nights live in fixtures, keyed by conference id. Remote seed can lag.

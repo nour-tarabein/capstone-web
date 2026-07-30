@@ -17,6 +17,7 @@ import { attendees, attendeesById } from '../fixtures/attendees'
 import { tysonsAttendeesById } from '../fixtures/attendeesTysons'
 import { getViewerId } from '../persona'
 import { getAllCheckedInAttendees } from '../checkinStorage'
+import { resolveViewer } from '../viewerResolution'
 import { events, pendingSubmissions, rejectedCandidates } from '../fixtures/events'
 import {
   tysonsEvents,
@@ -119,10 +120,7 @@ export function createMockRepository(): Repository {
     },
 
     async getViewer(conferenceId: string): Promise<Attendee> {
-      const viewerId = getViewerId()
-      const viewer = bundleFor(conferenceId).attendeesById.get(viewerId)
-      if (!viewer) throw new Error(`Attendee ${viewerId} not found in conference ${conferenceId}`)
-      return viewer
+      return resolveViewer(conferenceId, getViewerId())
     },
 
     async createAttendee(conferenceId: string, draft: AttendeeDraft): Promise<Attendee> {

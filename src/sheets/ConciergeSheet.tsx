@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { mdiSend, mdiStarFourPoints } from '@mdi/js';
 import type { Attendee } from '../offsite/domain/types';
-import { useViewerId } from '../offsite/persona';
-import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { sessionGuide, wifiInfo } from '../data/mock';
 import { openMap } from '../App';
 import { useDismiss } from '../ui/Sheet';
@@ -81,9 +80,7 @@ function answer(question: string, viewer: Attendee | undefined): Msg {
 }
 
 export function ConciergeSheet() {
-  const viewerId = useViewerId();
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(viewerId);
+  const viewer = useViewer();
   const dismiss = useDismiss();
   const [messages, setMessages] = useState<Msg[]>([
     {

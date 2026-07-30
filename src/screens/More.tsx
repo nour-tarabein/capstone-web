@@ -21,8 +21,9 @@ import { setAdminMode, useAdminMode } from '../offsite/adminMode';
 import { conferences } from '../offsite/fixtures/conference';
 import { initials } from '../offsite/format';
 import { shouldShowOrganizerToggle, shouldShowPersonaSwitcher } from '../offsite/moreVisibility';
-import { setViewerId, useViewerId } from '../offsite/persona';
+import { setViewerId } from '../offsite/persona';
 import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { openOverlay, type Overlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -49,12 +50,11 @@ export function MoreScreen() {
   const [generalOpen, setGeneralOpen] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
-  const viewerId = useViewerId();
   const activeConferenceId = useActiveConferenceId();
   const adminMode = useAdminMode(activeConferenceId);
   const activeConference = useActiveConference();
-  const { attendees, attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(viewerId);
+  const { attendees } = useActiveRoster();
+  const viewer = useViewer();
   const showOrganizerToggle = shouldShowOrganizerToggle(activeConferenceId);
   const showPersonaSwitcher = shouldShowPersonaSwitcher(activeConferenceId, adminMode);
 
@@ -165,12 +165,15 @@ export function MoreScreen() {
               </p>
               <div className="persona-settings-list">
                 {attendees.map((person) => {
-                  const active = person.id === viewerId;
+                  const active = person.id === viewer.id;
                   return (
                     <button
                       key={person.id}
                       className={active ? 'persona persona-active' : 'persona'}
-                      onClick={() => setViewerId(person.id)}
+                      aria-pressed={active}
+                      onClick={() => {
+                        if (!active) setViewerId(person.id);
+                      }}
                     >
                       <span className="persona-avatar">{initials(person.name)}</span>
                       <span className="persona-settings-name">

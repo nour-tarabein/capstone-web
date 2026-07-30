@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { mdiMagnify, mdiSend } from '@mdi/js';
-import { setViewerId, useViewerId } from '../offsite/persona';
+import { setViewerId } from '../offsite/persona';
 import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { sessionTitles } from '../offsite/fixtures/sessions';
 import { initials } from '../offsite/format';
 import { openOverlay } from '../overlays';
@@ -71,13 +72,13 @@ export function AttendeesSheet() {
 }
 
 export function ProfileSheet({ attendeeId }: { attendeeId: string }) {
-  const viewerId = useViewerId();
+  const viewer = useViewer();
   const dismiss = useDismiss();
   const { attendeesById } = useActiveRoster();
   const person = attendeesById.get(attendeeId);
   if (!person) return null;
 
-  const isViewer = person.id === viewerId;
+  const isViewer = person.id === viewer.id;
 
   return (
     <div>

@@ -15,9 +15,8 @@ import {
   sessionGuide,
   speakersBySession,
 } from '../data/mock';
-import { useViewerId } from '../offsite/persona';
 import { isOnSchedule, toggleSession, useScheduleVersion } from '../myschedule';
-import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { openOverlay } from '../overlays';
 import { toast } from '../ui/toast';
 import { Icon } from '../icons';
@@ -30,9 +29,8 @@ export function ScheduleScreen() {
   const [activeDay, setActiveDay] = useState(scheduleDays[0].night);
   const [activeCategory, setActiveCategory] = useState('All Sessions');
   const [promoOpen, setPromoOpen] = useState(true);
-  const viewerId = useViewerId();
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(viewerId);
+  const viewer = useViewer();
+  const viewerId = viewer.id;
   const scheduleVersion = useScheduleVersion();
 
   const sessions = useMemo(() => {

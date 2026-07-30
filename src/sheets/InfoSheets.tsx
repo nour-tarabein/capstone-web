@@ -11,8 +11,7 @@ import {
   mdiTrophyOutline,
   mdiWifi,
 } from '@mdi/js';
-import { useViewerId } from '../offsite/persona';
-import { useActiveRoster } from '../offsite/roster';
+import { useViewer } from '../offsite/viewerResolution';
 import { initials } from '../offsite/format';
 import {
   activityFeed,
@@ -145,8 +144,7 @@ const doneChallenges = new Set<string>(['g4']);
 export function GamesSheet() {
   const [, force] = useState(0);
   const [burstKey, setBurstKey] = useState(0);
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(useViewerId());
+  const viewer = useViewer();
 
   function complete(id: string, points: number) {
     if (doneChallenges.has(id)) return;
@@ -370,8 +368,7 @@ function qrCells(seed: string, size: number): boolean[] {
 }
 
 export function BadgeSheet() {
-  const { attendeesById } = useActiveRoster();
-  const viewer = attendeesById.get(useViewerId());
+  const viewer = useViewer();
   const size = 17;
   const cells = qrCells(viewer?.id ?? 'demo', size);
 

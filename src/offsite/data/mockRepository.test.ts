@@ -147,6 +147,36 @@ describe('mockRepository', () => {
       expect(austinPending.some((e) => e.title === 'Placeholder Submission')).toBe(false)
     })
 
+    it('keeps an Austin submission off the map until an organizer approves it', async () => {
+      const repo = createMockRepository()
+      const title = 'Austin Approval Circuit'
+
+      await repo.submitEvent(AUSTIN, {
+        title,
+        description: 'Candidate first, map pin second.',
+        startsAt: '2026-07-30T20:00:00-05:00',
+        venueName: 'Capital Factory',
+        lat: 30.2686,
+        lng: -97.7409,
+        submittedByAttendeeId: 'a1',
+      })
+
+      const candidate = (await repo.listPendingEvents(AUSTIN)).find((event) => event.title === title)
+      expect(candidate).toMatchObject({
+        conferenceId: AUSTIN,
+        curationStatus: 'candidate',
+        submittedByAttendeeId: 'a1',
+      })
+      expect((await repo.listEventsForNight(AUSTIN, '2026-07-30')).some((event) => event.title === title))
+        .toBe(false)
+
+      await repo.reviewEvent(AUSTIN, candidate!.id, 'approved')
+
+      expect((await repo.listPendingEvents(AUSTIN)).some((event) => event.id === candidate!.id)).toBe(false)
+      expect((await repo.listEventsForNight(AUSTIN, '2026-07-30')).some((event) => event.id === candidate!.id))
+        .toBe(true)
+    })
+
     it('createAttendee scopes the new attendee to the given conference', async () => {
       const repo = createMockRepository()
 
@@ -181,14 +211,16 @@ describe('mockRepository', () => {
       expect(austinRoster.some((a) => a.id === created.id)).toBe(false)
     })
 
-    it('getViewer resolves the roster for the given conference only', async () => {
+    it('getViewer resolves each conference without changing the first-visit viewer id', async () => {
       const repo = createMockRepository()
 
       const austinViewer = await repo.getViewer(AUSTIN)
       expect(austinViewer.id).toBe(VIEWER_WITHOUT_RSVPS)
       expect(austinViewer.conferenceId).toBe(AUSTIN)
 
-      await expect(repo.getViewer(TYSONS)).rejects.toThrow()
+      const tysonsViewer = await repo.getViewer(TYSONS)
+      expect(tysonsViewer.id).toBe(tysonsConference.defaultViewerId)
+      expect(tysonsViewer.conferenceId).toBe(TYSONS)
     })
   })
 })
