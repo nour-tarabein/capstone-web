@@ -4191,6 +4191,30 @@ button:is(.offsite-card, .home-tile, .happening-card)::after {
   }
 }
 
+/* ---- pinned glass ----
+   The tab bar refracts convincingly because it floats over the scrolling list:
+   real, high-contrast, *moving* text passes behind it. An in-flow card never
+   gets that, no matter how the optics are tuned — the scene behind it scrolls
+   with it. Pinning this card to the top of the scroll buys the same thing the
+   tab bar has for free: the tile grid and the up-next card slide underneath it.
+
+   Paint order is the catch. The global button chrome makes every button
+   position: relative, so the tiles that come *after* this card in the DOM would
+   otherwise paint over it. Lifting the card above them also places them beneath
+   it in paint order — which is precisely what backdrop-filter samples, so the
+   fix for the overlap is also what makes the refraction work. */
+.home-content > .offsite-card {
+  position: sticky;
+  top: 8px;
+  z-index: 3;
+  /* Denser than the free-floating cards: with body text sliding under it, the
+     lens needs enough tint (plus the frost={14} it now asks for) to keep its own
+     label readable. */
+  --liquid-control-fill: rgba(7, 19, 15, 0.52);
+  --liquid-control-fill-hover: rgba(9, 26, 20, 0.6);
+  --liquid-control-edge: rgba(255, 255, 255, 0.24);
+}
+
 /* Floats over the map, so let the tiles refract through translucent jade
    instead of hiding them behind a solid fill. */
 button.host-button {
