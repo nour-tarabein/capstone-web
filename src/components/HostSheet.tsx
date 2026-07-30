@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { mdiCheckDecagram } from '@mdi/js';
 import type { Attendee, Conference } from '../offsite/domain/types';
 import { getRepository } from '../offsite/data';
@@ -6,24 +6,18 @@ import { conferenceIso } from '../offsite/format';
 import { nightLabels } from '../offsite/fixtures/conference';
 import { openReview } from '../App';
 import { Sheet } from '../ui/Sheet';
+import { venuesForConference } from '../offsite/fixtures/venues';
+import { Sheet, useDismiss } from '../ui/Sheet';
 import { Burst } from '../ui/Burst';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 
 /**
  * Attendee event submission. The mobile app looks venues up through Mapbox
- * search; the web demo has no API token to ship, so it offers a preset list
- * of downtown venues instead — enough to run the submit → review → approve
- * loop live with an audience.
+ * search; the web demo has no API token to ship, so it offers a per-conference
+ * venue catalogue of pre-geocoded places instead — enough to run the
+ * submit → review → approve loop live with an audience (issue #23).
  */
-const VENUES = [
-  { name: 'Capital Factory', lat: 30.2686, lng: -97.7409 },
-  { name: 'Half Step', lat: 30.2549, lng: -97.7383 },
-  { name: 'Emmer & Rye', lat: 30.2597, lng: -97.7395 },
-  { name: "Banger's", lat: 30.2551, lng: -97.7379 },
-  { name: 'The Bungalow Rooftop', lat: 30.2557, lng: -97.7392 },
-  { name: "Kitty Cohen's", lat: 30.2649, lng: -97.7213 },
-];
 
 interface Props {
   viewer: Attendee;
@@ -45,6 +39,8 @@ function HostForm({
   conference,
   onSubmitted,
 }: Omit<Props, 'onClose'>) {
+  const dismiss = useDismiss();
+  const venues = venuesForConference(conference.id);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [night, setNight] = useState(conference.nights[0]);
@@ -53,11 +49,17 @@ function HostForm({
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Active-conference switches must refresh the offered venues without a reload.
+  useEffect(() => {
+    setNight(conference.nights[0]);
+    setVenueIndex(0);
+  }, [conference.id]);
+
   async function submit() {
-    if (!title.trim() || busy) return;
+    const venue = venues[venueIndex];
+    if (!title.trim() || busy || !venue) return;
     setBusy(true);
     try {
-      const venue = VENUES[venueIndex];
       await getRepository(conference.id).submitEvent(conference.id, {
         title,
         description,
@@ -149,8 +151,9 @@ function HostForm({
         className="field-input"
         value={venueIndex}
         onChange={(e) => setVenueIndex(Number(e.target.value))}
+        disabled={venues.length === 0}
       >
-        {VENUES.map((v, i) => (
+        {venues.map((v, i) => (
           <option key={v.name} value={i}>
             {v.name}
           </option>
@@ -160,7 +163,7 @@ function HostForm({
       <button
         className="rsvp-button"
         onClick={() => void submit()}
-        disabled={!title.trim() || busy}
+        disabled={!title.trim() || busy || venues.length === 0}
       >
         {busy ? '…' : 'Submit for review'}
       </button>

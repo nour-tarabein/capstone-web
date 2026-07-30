@@ -2,8 +2,10 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
-// base './' so the build works from any path — a GitHub Pages project site
-// serves from /<repo-name>/, and absolute asset URLs would 404 there.
+// base './' emits relative asset URLs, so the build works from any path. That
+// was for GitHub Pages project sites (/<repo-name>/); Vercel serves from the
+// domain root, where it is unnecessary but harmless — retained intentionally
+// rather than changed for no gain (issue #26).
 export default defineConfig({
   base: './',
   plugins: [react()],

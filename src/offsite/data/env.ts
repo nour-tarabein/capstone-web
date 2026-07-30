@@ -4,7 +4,8 @@
  * can read config without importing index (which imports it — a cycle).
  *
  * All three are empty/unset by default, which is what makes a fresh clone and
- * the GitHub Pages build fall back to the fixture-backed demo with zero setup.
+ * a deploy with no environment variables set fall back to the fixture-backed
+ * demo with zero setup.
  */
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
