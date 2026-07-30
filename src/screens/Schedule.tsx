@@ -22,6 +22,7 @@ import { toast } from '../ui/toast';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 import { LiquidButton } from '../components/LiquidButton';
+import { LiquidGlass } from '../components/LiquidGlass';
 
 export function ScheduleScreen() {
   const [activeTab, setActiveTab] = useState<(typeof scheduleTabs)[number]>(
@@ -107,34 +108,41 @@ export function ScheduleScreen() {
           </LiquidButton>
         )}
 
-        <div className="day-row">
-          {scheduleDays.map((day) => (
-            <LiquidButton
-              key={day.night}
-              className={
-                day.night === activeDay ? 'day-chip day-chip-active' : 'day-chip'
-              }
-              onClick={() => setActiveDay(day.night)}
-            >
-              {day.label}
-            </LiquidButton>
-          ))}
-        </div>
+        {/* Pinned to the top of the list. Keeps the day and track filters in
+            reach while you scan, and gives the glass the one thing an in-flow
+            surface never has: session cards moving behind it to refract. */}
+        <div className="schedule-filters">
+          <LiquidGlass className="schedule-filters-glass" frost={14} />
 
-        <div className="category-row">
-          {scheduleCategories.map((category) => (
-            <LiquidButton
-              key={category}
-              className={
-                category === activeCategory
-                  ? 'category-chip category-chip-active'
-                  : 'category-chip'
-              }
-              onClick={() => setActiveCategory(category)}
-            >
-              {category}
-            </LiquidButton>
-          ))}
+          <div className="day-row">
+            {scheduleDays.map((day) => (
+              <LiquidButton
+                key={day.night}
+                className={
+                  day.night === activeDay ? 'day-chip day-chip-active' : 'day-chip'
+                }
+                onClick={() => setActiveDay(day.night)}
+              >
+                {day.label}
+              </LiquidButton>
+            ))}
+          </div>
+
+          <div className="category-row">
+            {scheduleCategories.map((category) => (
+              <LiquidButton
+                key={category}
+                className={
+                  category === activeCategory
+                    ? 'category-chip category-chip-active'
+                    : 'category-chip'
+                }
+                onClick={() => setActiveCategory(category)}
+              >
+                {category}
+              </LiquidButton>
+            ))}
+          </div>
         </div>
 
         {sessions.length === 0 ? (
