@@ -90,7 +90,7 @@ export function MoreScreen() {
       <div className="screen-scroll">
         {moreMenuItems.map((item, index) => (
           <div key={item.id}>
-            <LiquidButton className="more-row" onClick={() => openRow(item.id)}>
+            <LiquidButton className="more-row glass-card" onClick={() => openRow(item.id)}>
               <Icon path={item.icon} size={24} color={colors.green} className="more-row-icon" />
               <span className="more-row-label">{item.label}</span>
               <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
@@ -101,7 +101,7 @@ export function MoreScreen() {
 
         <div className="section-divider" />
 
-        <LiquidButton className="more-section-header" onClick={() => setGeneralOpen((o) => !o)}>
+        <LiquidButton className="more-section-header glass-card" onClick={() => setGeneralOpen((o) => !o)}>
           <span className="more-section-title">General</span>
           <Icon
             path={generalOpen ? mdiChevronUp : mdiChevronDown}
@@ -113,7 +113,7 @@ export function MoreScreen() {
         {generalOpen
           ? moreGeneralItems.map((item, index) => (
               <div key={item.id}>
-                <LiquidButton className="more-row" onClick={() => openRow(item.id)}>
+                <LiquidButton className="more-row glass-card" onClick={() => openRow(item.id)}>
                   <Icon path={item.icon} size={24} color={colors.green} className="more-row-icon" />
                   <span className="more-row-label more-row-label-truncate">{item.label}</span>
                   <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
@@ -127,7 +127,7 @@ export function MoreScreen() {
 
         <div className="section-divider" />
 
-        <LiquidButton className="more-section-header" onClick={() => setInviteOpen((o) => !o)}>
+        <LiquidButton className="more-section-header glass-card" onClick={() => setInviteOpen((o) => !o)}>
           <span className="more-section-title">Invite-only</span>
           <Icon
             path={inviteOpen ? mdiChevronUp : mdiChevronDown}
@@ -138,7 +138,7 @@ export function MoreScreen() {
 
         {inviteOpen
           ? moreInviteOnlyItems.map((item) => (
-              <LiquidButton key={item.id} className="more-row" onClick={() => openRow(item.id)}>
+              <LiquidButton key={item.id} className="more-row glass-card" onClick={() => openRow(item.id)}>
                 <Icon path={item.icon} size={24} color={colors.green} className="more-row-icon" />
                 <span className="more-row-label">{item.label}</span>
                 <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
@@ -148,7 +148,7 @@ export function MoreScreen() {
 
         <div className="section-divider" />
 
-        <LiquidButton className="offsite-row" onClick={openMap} aria-label="Open tonight nearby map">
+        <LiquidButton className="offsite-row glass-card" onClick={openMap} aria-label="Open tonight nearby map">
           <Icon path={mdiMapOutline} size={22} color={colors.green} />
           <span className="offsite-row-text">Tonight Nearby</span>
           <Icon path={mdiChevronRight} size={18} color={colors.textSecondary} />
@@ -215,7 +215,7 @@ export function MoreScreen() {
 
         {adminMode ? (
           <LiquidButton
-            className="offsite-row"
+            className="offsite-row glass-card"
             onClick={openReview}
             aria-label="Open the event review queue"
           >
@@ -275,7 +275,7 @@ export function MoreScreen() {
           </div>
         </div>
 
-        <LiquidButton className="exit-button" onClick={() => openOverlay({ kind: 'exit' })}>
+        <LiquidButton className="exit-button glass-card" onClick={() => openOverlay({ kind: 'exit' })}>
           Exit event
         </LiquidButton>
       </div>

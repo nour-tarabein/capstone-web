@@ -4207,14 +4207,17 @@ button.rsvp-going {
   transition: background-color 0.2s ease;
 }
 
-.stat-chip {
+/* Plain elements that host a lens (stat chips, the promo / free-time / review
+   cards) need the same containment a LiquidButton gets from the global button
+   chrome, or the lens's negative z-index escapes the surface. */
+.liquid-control-surface {
   position: relative;
   isolation: isolate;
 }
 
 /* These cards previously blurred their backdrop themselves; the refraction
    layer replaces that, and doubling up would filter the lens output twice. */
-.stat-chip,
+.liquid-control-surface,
 .offsite-card,
 .home-tile,
 .happening-card {
@@ -4222,41 +4225,80 @@ button.rsvp-going {
   -webkit-backdrop-filter: none;
 }
 
-/* The home cards read as sheets of curved glass rather than smoked panels.
+/* ================= glass cards =================
+   Every card-sized surface in the app wears this, so Home, Schedule,
+   Exhibitors, More, My Event, and the review queue read as one material.
+   Tag a surface `glass-card` and give it a lens — either a LiquidButton, or a
+   <LiquidGlass className="control-glass"> child plus `liquid-control-surface`
+   on a plain element.
+
    The host contributes only its border and cast shadow — everything optical
    lives on the .control-glass lens — because `backdrop-filter` samples whatever
    is painted beneath the glass layer, the host's own background included. A
    fill on both therefore counts twice: 0.09 refracted through the lens plus
    0.09 painted over it lands near 0.17 white, which is exactly the smoked-
-   plastic look.
+   plastic look the other screens had.
 
    The surviving fill is *dark*, copied from .tab-bar-glass — that's the other
-   half of why the tab bar reads as glass and these read as plastic. A white
+   half of why the tab bar reads as glass and those read as plastic. A white
    veil lightens the backdrop toward mid-gray, which is where refraction goes to
    die: bent mid-gray still looks like mid-gray. A dark tint keeps the backdrop
    dark and leaves the bright rim as the only light in the surface, so the eye
    reads a thin curved edge instead of a filled panel.
 
-   (button:is keeps specificity level with the global button chrome so this
-   later rule wins.) */
-button:is(.offsite-card, .home-tile, .happening-card),
-.stat-chip {
+   Only the variables and the cast shadow are declared here. The global button
+   chrome already derives border-color, fill, and box-shadow from these, and
+   .liquid-control / .liquid-control-surface already zero the host background —
+   so a class-only selector carries the whole recipe onto buttons, and the two
+   explicit properties cover the plain-element hosts that read neither. */
+.glass-card {
   --liquid-control-fill: rgba(7, 19, 15, 0.3);
   --liquid-control-fill-hover: rgba(9, 26, 20, 0.42);
   --liquid-control-edge: rgba(255, 255, 255, 0.2);
   --liquid-control-edge-bright: rgba(255, 255, 255, 0.36);
-  background-color: transparent;
-  background-image: none;
+  --liquid-control-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  --liquid-control-shadow-hover: 0 18px 42px rgba(0, 0, 0, 0.4);
   border-color: var(--liquid-control-edge);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  box-shadow: var(--liquid-control-shadow);
+}
+
+/* Custom properties inherit, so a control nested inside a card — the promo
+   CTA, the free-time map link, a collapse arrow — would otherwise wear the
+   card's dark tint and flat shadow instead of reading as a control. Any
+   matching declaration beats inheritance regardless of weight, so re-declaring
+   the neutral substrate inside :where() puts it back at near-zero specificity:
+   it wins against the card above and loses to every explicit control rule. */
+:where(.glass-card) :where(button) {
+  --liquid-control-fill: rgba(255, 255, 255, 0.075);
+  --liquid-control-fill-hover: rgba(255, 255, 255, 0.115);
+  --liquid-control-edge: rgba(255, 255, 255, 0.18);
+  --liquid-control-edge-bright: rgba(255, 255, 255, 0.42);
+  --liquid-control-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    1px 0 0 rgba(255, 255, 255, 0.08) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.28) inset,
+    0 8px 22px rgba(0, 0, 0, 0.2);
+  --liquid-control-shadow-hover:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    1px 0 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+    0 12px 28px rgba(0, 0, 0, 0.25);
+}
+
+/* The invitation cards keep a jade rim — it's what marks them as prompts
+   rather than list rows. Declared after .glass-card so the var wins. */
+.promo-card,
+.promo-collapsed,
+.free-time-card {
+  --liquid-control-edge: rgba(79, 209, 160, 0.55);
+  --liquid-control-edge-bright: rgba(79, 209, 160, 0.8);
 }
 
 /* Same reasoning as the dark fill: the shared lens paints a white sweep across
    its whole surface, which over a card this large is another milky veil. The
    tab bar has none — so trim it to a tight corner highlight and let the rim do
    the work. */
-button:is(.offsite-card, .home-tile, .happening-card) > .control-glass,
-.stat-chip > .control-glass {
+.glass-card > .control-glass {
   background-image: radial-gradient(
     120% 100% at 10% -30%,
     rgba(255, 255, 255, 0.14) 0%,
@@ -4274,21 +4316,16 @@ button:is(.offsite-card, .home-tile, .happening-card) > .control-glass,
 /* The top-light layer is press feedback (it brightens on hover/active). At
    ambient level across a card this large it flattens the glass, so keep it low
    until the control is actually touched. */
-button:is(.offsite-card, .home-tile, .happening-card)::after {
+button.glass-card::after {
   opacity: 0.07;
 }
 
 @media (hover: hover) {
-  /* Hover brightens the rim and lifts the shadow; the tint change goes on the
-     lens so hovering can't reintroduce the double fill. */
-  button:is(.offsite-card, .home-tile, .happening-card):not(:disabled):hover {
-    background-color: transparent;
-    border-color: var(--liquid-control-edge-bright);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
-  }
-
+  /* Hover brightens the rim and lifts the shadow through the variables above;
+     the tint change goes on the lens so hovering can't reintroduce the double
+     fill. */
   .liquid-control:not(:disabled):hover > .control-glass,
-  .stat-chip:hover > .control-glass {
+  .glass-card:hover > .control-glass {
     background-color: var(--liquid-control-fill-hover);
   }
 }
@@ -4391,18 +4428,15 @@ button:is(
   text-decoration: none;
 }
 
+/* Small controls keep the neutral white substrate; the card-sized rows and
+   tiles that used to live here are .glass-card now. This selector outweighs a
+   bare class, so anything listed below would override the card recipe. */
 button:is(
-    .more-row,
-    .more-section-header,
-    .offsite-row,
-    .exhibitor-row,
     .popover-item,
-    .tier-card,
     .filter-chip,
     .sort-button,
     .top-tab,
-    .top-tab-light,
-    .exit-button
+    .top-tab-light
   ) {
   --liquid-control-fill: rgba(255, 255, 255, 0.09);
   --liquid-control-fill-hover: rgba(255, 255, 255, 0.14);
@@ -4454,6 +4488,33 @@ button:is(.top-tab-active, .top-tab-light-active) {
     radial-gradient(80% 50% at 105% 100%, rgba(157, 148, 73, 0.06), transparent 66%),
     var(--bg);
   color: var(--text);
+}
+
+/* Home has no container bands — the ambient scene runs edge to edge behind the
+   cards, and that is most of why it reads as one surface. These strips were
+   painting a faint white band over the same scene, so the cards floated on a
+   second material instead of on the app's own background. */
+.top-tabs-light,
+.filters-row,
+.sort-row,
+.category-grid-wrap {
+  background: transparent;
+}
+
+/* A literal white popover over the dark screen was the last light-mode holdout
+   from the ported layout. */
+.popover {
+  background: rgba(9, 22, 17, 0.82);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 16px 38px rgba(0, 0, 0, 0.45);
+}
+
+.popover-item + .popover-item {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .more-row,

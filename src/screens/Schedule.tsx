@@ -80,7 +80,8 @@ export function ScheduleScreen() {
 
       <div className="screen-scroll schedule-content">
         {promoOpen ? (
-          <div className="promo-card">
+          <div className="promo-card glass-card liquid-control-surface">
+            <LiquidGlass className="control-glass" />
             <div className="promo-top">
               <Icon path={mdiStarFourPoints} size={18} color={colors.green} />
               <LiquidButton
@@ -101,7 +102,10 @@ export function ScheduleScreen() {
             </LiquidButton>
           </div>
         ) : (
-          <LiquidButton className="promo-collapsed" onClick={() => setPromoOpen(true)}>
+          <LiquidButton
+            className="promo-collapsed glass-card"
+            onClick={() => setPromoOpen(true)}
+          >
             <span className="promo-cta-inline">Get recommendations</span>
             <Icon path={mdiChevronDown} size={18} color={colors.green} />
           </LiquidButton>
@@ -157,7 +161,7 @@ export function ScheduleScreen() {
             return (
               <LiquidButton
                 key={session.id}
-                className="session-card"
+                className="session-card glass-card"
                 style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                 onClick={() => openOverlay({ kind: 'session', sessionId: session.id })}
               >

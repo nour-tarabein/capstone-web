@@ -8,6 +8,7 @@ import { openOverlay } from '../overlays';
 import { Icon } from '../icons';
 import { colors } from '../theme';
 import { LiquidButton } from '../components/LiquidButton';
+import { LiquidGlass } from '../components/LiquidGlass';
 
 export function MyEventScreen() {
   // Same persona the offsite map uses, so switching there follows here too.
@@ -23,7 +24,7 @@ export function MyEventScreen() {
 
       <div className="screen-scroll myevent-content">
         <LiquidButton
-          className="profile-card"
+          className="profile-card glass-card"
           onClick={() =>
             viewer && openOverlay({ kind: 'profile', attendeeId: viewer.id })
           }
@@ -63,7 +64,10 @@ export function MyEventScreen() {
           <span className="count-badge">{unreadUpdateCount}</span>
         </div>
 
-        <LiquidButton className="update-card" onClick={() => openOverlay({ kind: 'updates' })}>
+        <LiquidButton
+          className="update-card glass-card"
+          onClick={() => openOverlay({ kind: 'updates' })}
+        >
           <Icon path={mdiBellOutline} size={22} color={colors.green} />
           <span className="update-text">
             <strong>{latest.title} </strong>
@@ -83,7 +87,8 @@ export function MyEventScreen() {
           </div>
           <div className="timeline-body">
             <div className="happening-now">Happening now</div>
-            <div className="free-time-card">
+            <div className="free-time-card glass-card liquid-control-surface">
+              <LiquidGlass className="control-glass" />
               <div className="time-range">2:15 PM – 5:00 PM (2h 45m)</div>
               <div className="free-time-title">You have free time</div>
               <LiquidButton className="free-time-cta" onClick={openMap}>
@@ -102,7 +107,7 @@ export function MyEventScreen() {
             <div className="timeline-body">
               <div className="happening-now happening-next">Up next · 5:00 PM</div>
               <LiquidButton
-                className="session-card timeline-session"
+                className="session-card timeline-session glass-card"
                 onClick={() =>
                   openOverlay({ kind: 'session', sessionId: upNext.id })
                 }

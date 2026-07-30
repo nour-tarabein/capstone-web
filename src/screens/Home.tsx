@@ -80,15 +80,15 @@ export function HomeScreen() {
         </div>
 
         <div className="stat-row">
-          <span className="stat-chip liquid-control-surface">
+          <span className="stat-chip glass-card liquid-control-surface">
             <LiquidGlass className="control-glass" />
             <strong>{attendees.length * 60}+</strong> attendees
           </span>
-          <span className="stat-chip liquid-control-surface">
+          <span className="stat-chip glass-card liquid-control-surface">
             <LiquidGlass className="control-glass" />
             <strong>{sessionCount}</strong> sessions
           </span>
-          <span className="stat-chip liquid-control-surface">
+          <span className="stat-chip glass-card liquid-control-surface">
             <LiquidGlass className="control-glass" />
             <strong>{nightsOut}</strong> {nightsOut === 1 ? 'night' : 'nights'} out
           </span>
@@ -106,7 +106,7 @@ export function HomeScreen() {
         </button>
 
         <button
-          className="offsite-card liquid-control"
+          className="offsite-card glass-card liquid-control"
           onClick={openMap}
           aria-label="Open tonight nearby map"
         >
@@ -125,7 +125,7 @@ export function HomeScreen() {
           {homeActions.map((action, i) => (
             <button
               key={action.id}
-              className="home-tile liquid-control"
+              className="home-tile glass-card liquid-control"
               style={{ animationDelay: `${i * 45}ms` }}
               onClick={TILE_TARGETS[action.id]}
             >
@@ -137,7 +137,7 @@ export function HomeScreen() {
         </div>
 
         <button
-          className="happening-card liquid-control"
+          className="happening-card glass-card liquid-control"
           onClick={() => openOverlay({ kind: 'session', sessionId: 'reception' } satisfies Overlay)}
         >
           <LiquidGlass className="control-glass" />
