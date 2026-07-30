@@ -7,7 +7,6 @@ import { nightLabels } from '../offsite/fixtures/conference';
 import { openReview } from '../App';
 import { Sheet } from '../ui/Sheet';
 import { venuesForConference } from '../offsite/fixtures/venues';
-import { Sheet, useDismiss } from '../ui/Sheet';
 import { Burst } from '../ui/Burst';
 import { Icon } from '../icons';
 import { colors } from '../theme';
@@ -39,7 +38,6 @@ function HostForm({
   conference,
   onSubmitted,
 }: Omit<Props, 'onClose'>) {
-  const dismiss = useDismiss();
   const venues = venuesForConference(conference.id);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
